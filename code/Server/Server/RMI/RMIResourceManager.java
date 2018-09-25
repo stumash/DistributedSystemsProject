@@ -16,11 +16,17 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-public class RMIResourceManager extends ResourceManager 
+// RMIResourceManager is a whole class containing a registry and references to objects
+// These objects can be created through "creators", i.e. addFlight, addCars, addRooms
+// After creation or updates, through creators/setters, the object is written to RNHashMap
+// RNHashMap takes a key and stores the object as the value
+// Read data simply pulls object values from this RNHashMap
+
+public class RMIResourceManager extends ResourceManager
 {
 	private static String s_serverName = "Server";
 	//TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
-	// private static String s_rmiPrefix = "groupAlex_";
+	private static String s_rmiPrefix = "group25_";
 
 	public static void main(String args[])
 	{
@@ -28,7 +34,7 @@ public class RMIResourceManager extends ResourceManager
 		{
 			s_serverName = args[0];
 		}
-			
+
 		// Create the RMI server entry
 		try {
 			// Create a new Server object
@@ -58,7 +64,7 @@ public class RMIResourceManager extends ResourceManager
 						e.printStackTrace();
 					}
 				}
-			});                                       
+			});
 			System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_rmiPrefix + s_serverName + "'");
 		}
 		catch (Exception e) {
