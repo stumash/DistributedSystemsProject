@@ -1,3 +1,0 @@
-grant codebase "file:/home/2016/ndevas/comp512/Project1/DistributedSystemsProject/code/Server/" {
-permission java.security.AllPermission;
-};

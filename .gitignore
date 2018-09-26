@@ -1,0 +1,9 @@
+# java-generated
+*.class
+*.jar
+.nfs*
+java.policy
+
+# ide-generated
+.idea
+*.iml
