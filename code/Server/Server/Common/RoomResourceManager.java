@@ -10,6 +10,10 @@ public class RoomResourceManager extends AbstractRMHashMapManager implements IRo
 {
   // Create a new room location or add rooms to an existing location
 	// NOTE: if price <= 0 and the room location already exists, it maintains its current price
+	private String m_name = "";
+	public RoomResourceManager(String p_name) {
+		m_name = p_name;
+	}
 	public boolean addRooms(int xid, String location, int count, int price) throws RemoteException
 	{
 		Trace.info("RM::addRooms(" + xid + ", " + location + ", " + count + ", $" + price + ") called");
@@ -57,4 +61,8 @@ public class RoomResourceManager extends AbstractRMHashMapManager implements IRo
     return reserveItem(xid, customerID, Room.getKey(location), location);
   }
 
+	public String getName() throws RemoteException
+	{
+		return m_name;
+	}
 }

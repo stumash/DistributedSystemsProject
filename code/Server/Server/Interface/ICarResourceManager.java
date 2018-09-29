@@ -62,4 +62,3 @@ throws RemoteException;
 public String getName()
     throws RemoteException;
 }
-}

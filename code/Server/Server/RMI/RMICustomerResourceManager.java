@@ -22,12 +22,12 @@ import java.rmi.server.UnicastRemoteObject;
 // RNHashMap takes a key and stores the object as the value
 // Read data simply pulls object values from this RNHashMap
 
-public class RMICarResourceManager extends CarResourceManager
+public class RMICustomerResourceManager extends CustomerResourceManager
 {
-	private static String s_serverName = "CarServer";
+	private static String s_serverName = "CustomerServer";
 	//TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
 	private static String s_rmiPrefix = "group25_";
-	
+
 	public static void main(String args[])
 	{
 		if (args.length > 0)
@@ -38,17 +38,17 @@ public class RMICarResourceManager extends CarResourceManager
 		// Create the RMI server entry
 		try {
 			// Create a new Server object
-			RMICarResourceManager server = new RMICarResourceManager(s_serverName);
+			RMICustomerResourceManager server = new RMICustomerResourceManager(s_serverName);
 
 			// Dynamically generate the stub (client proxy)
-			ICarResourceManager resourceManager = (ICarResourceManager)UnicastRemoteObject.exportObject(server, 0);
+			ICustomerResourceManager resourceManager = (ICustomerResourceManager)UnicastRemoteObject.exportObject(server, 0);
 
 			// Bind the remote object's stub in the registry
 			Registry l_registry;
 			try {
-				l_registry = LocateRegistry.createRegistry(2001);
+				l_registry = LocateRegistry.createRegistry(2003);
 			} catch (RemoteException e) {
-				l_registry = LocateRegistry.getRegistry(2001);
+				l_registry = LocateRegistry.getRegistry(2003);
 			}
 			final Registry registry = l_registry;
 			registry.rebind(s_rmiPrefix + s_serverName, resourceManager);
@@ -80,7 +80,7 @@ public class RMICarResourceManager extends CarResourceManager
 		}
 	}
 
-	public RMICarResourceManager(String name)
+	public RMICustomerResourceManager(String name)
 	{
 		super(name);
 	}

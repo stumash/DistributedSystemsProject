@@ -10,6 +10,11 @@ public class FlightResourceManager extends AbstractRMHashMapManager implements I
 {
   // Create a new flight, or add seats to existing flight
   // NOTE: if flightPrice <= 0 and the flight already exists, it maintains its current price
+  private String m_name = "";
+  public FlightResourceManager(String p_name) {
+    m_name = p_name;
+  }
+
   public boolean addFlight(int xid, int flightNum, int flightSeats, int flightPrice) throws RemoteException
   {
     Trace.info("RM::addFlight(" + xid + ", " + flightNum + ", " + flightSeats + ", $" + flightPrice + ") called");
@@ -57,5 +62,10 @@ public class FlightResourceManager extends AbstractRMHashMapManager implements I
   public int queryFlightPrice(int xid, int flightNum) throws RemoteException
   {
     return queryPrice(xid, Flight.getKey(flightNum));
+  }
+
+  public String getName() throws RemoteException
+  {
+    return m_name;
   }
 }

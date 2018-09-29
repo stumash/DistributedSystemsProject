@@ -38,7 +38,7 @@ public class RMIFlightResourceManager extends FlightResourceManager
 		// Create the RMI server entry
 		try {
 			// Create a new Server object
-			RMIFlightResourceManager server = new RMIFliResourceManager(s_serverName);
+			RMIFlightResourceManager server = new RMIFlightResourceManager(s_serverName);
 
 			// Dynamically generate the stub (client proxy)
 			IFlightResourceManager resourceManager = (IFlightResourceManager)UnicastRemoteObject.exportObject(server, 0);
