@@ -80,7 +80,7 @@ public class RMIRoomResourceManager extends RoomResourceManager
 		}
 	}
 
-	public RMICarResourceManager(String name)
+	public RMIRoomResourceManager(String name)
 	{
 		super(name);
 	}

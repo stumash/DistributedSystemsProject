@@ -73,7 +73,7 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager
 		}
 	}
 
-	public RMIResourceManager(String name)
+	public RMIMiddlewareResourceManager(String name)
 	{
 		super(name);
 	}
