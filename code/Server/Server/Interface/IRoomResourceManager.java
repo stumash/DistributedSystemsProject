@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface IRoomResourceManager extends Remote
+public interface IRoomResourceManager extends Remote, ICustomerReservationManager
 {
   /**
    * Add room at a location.

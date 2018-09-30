@@ -6,12 +6,12 @@ import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
-public class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager, ICustomerReservationManager
+public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager
 {
   // Create a new car location or add cars to an existing location
   // NOTE: if price <= 0 and the location already exists, it maintains its current price
   private String m_name = "";
-  // private carRM = new CarResourceManager();
+  protected ICustomerResourceManager customerRM;
 
   public CarResourceManager(String p_name) {
     m_name = p_name;
@@ -65,15 +65,22 @@ public class CarResourceManager extends AbstractRMHashMapManager implements ICar
     return queryPrice(xid, Car.getKey(location));
   }
 
-  public boolean reserveItem(int xid, int customerID, String key, String location) {
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+  {
     Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
 		// Read customer object if it exists (and read lock it)
-		Customer customer = getCustomer(xid, Customer.getKey(customerID));
-		if (customer == null)
-		{
-			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist");
-			return false;
-		}
+    Customer customer = null;
+    try {
+  		customer = getCustomer(xid, customerID);
+  		if (customer == null)
+  		{
+  			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist");
+  			return false;
+  		}
+    } catch (RemoteException e) {
+      Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist--remote exception");
+      return false;
+    }
 
 		// Check if the item is available
 		ReservableItem item = (ReservableItem)readData(xid, key);
@@ -107,6 +114,11 @@ public class CarResourceManager extends AbstractRMHashMapManager implements ICar
    customerRM.getCustomer(xid, cid)
  }
    */
+  public Customer getCustomer(int xid, int customerID) throws RemoteException
+  {
+    return customerRM.getCustomer(xid, customerID);
+  }
+
   public String getName() throws RemoteException
 	{
 		return m_name;

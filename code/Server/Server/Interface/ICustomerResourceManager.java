@@ -1,5 +1,7 @@
 package Server.Interface;
 
+import Server.Common.Customer;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -44,5 +46,13 @@ throws RemoteException;
  * @return Name
  */
 public String getName()
+    throws RemoteException;
+
+/**
+ * Get a customer
+ *
+ * @return the customer
+ */
+public Customer getCustomer(int xid, int customerID)
     throws RemoteException;
 }

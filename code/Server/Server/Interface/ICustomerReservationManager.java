@@ -9,7 +9,7 @@ import Server.Common.Customer;
 
 public interface ICustomerReservationManager
 {
-  public boolean reserveItem(int xid, int customerID, String key, String location);
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException;
 
-  public Customer getCustomer(int xid, int customerID);
+  public Customer getCustomer(int xid, int customerID) throws RemoteException;
 }

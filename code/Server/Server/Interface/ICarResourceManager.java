@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface ICarResourceManager extends Remote
+public interface ICarResourceManager extends Remote, ICustomerReservationManager
 {
   /**
    * Reserve a car at this location.

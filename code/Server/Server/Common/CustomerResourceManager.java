@@ -43,7 +43,7 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
       return false;
     }
   }
-  // TODO public Customer getCUstomer(int xid, int customerID) {} TODO
+
 
   public boolean deleteCustomer(int xid, int customerID) throws RemoteException
   {
@@ -97,5 +97,10 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
   public String getName() throws RemoteException
   {
     return m_name;
+  }
+
+  public Customer getCustomer(int xid, int customerID) throws RemoteException
+  {
+    return (Customer)readData(xid, Customer.getKey(customerID));
   }
 }

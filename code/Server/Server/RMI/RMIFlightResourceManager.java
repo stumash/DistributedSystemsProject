@@ -11,6 +11,7 @@ import Server.Common.*;
 import java.rmi.NotBoundException;
 import java.util.*;
 
+import java.rmi.Remote;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -22,7 +23,7 @@ import java.rmi.server.UnicastRemoteObject;
 // RNHashMap takes a key and stores the object as the value
 // Read data simply pulls object values from this RNHashMap
 
-public class RMIFlightResourceManager extends FlightResourceManager
+public class RMIFlightResourceManager extends FlightResourceManager implements IRemoteResourceManagerGetter
 {
 	private static String s_serverName = "FlightServer";
 	//TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
@@ -39,6 +40,8 @@ public class RMIFlightResourceManager extends FlightResourceManager
 		try {
 			// Create a new Server object
 			RMIFlightResourceManager server = new RMIFlightResourceManager(s_serverName);
+
+			server.customerRM = (ICustomerResourceManager)server.getRemoteResourceManager("localhost", 2003, "CustomerServer");
 
 			// Dynamically generate the stub (client proxy)
 			IFlightResourceManager resourceManager = (IFlightResourceManager)UnicastRemoteObject.exportObject(server, 0);
@@ -78,6 +81,33 @@ public class RMIFlightResourceManager extends FlightResourceManager
 		{
 			System.setSecurityManager(new SecurityManager());
 		}
+	}
+	public Remote getRemoteResourceManager(String hostname, int port, String name) {
+		Remote remoteResourceManager = null;
+		try {
+			boolean first = true;
+			while (true) {
+				try {
+					Registry registry = LocateRegistry.getRegistry(hostname, port);
+					remoteResourceManager = registry.lookup(s_rmiPrefix + name);
+					System.out.println("Connected to '" + name + "' server [" + hostname + ":" + port + "/" + s_rmiPrefix + name + "]");
+					break;
+				}
+				catch (NotBoundException|RemoteException e) {
+					if (first) {
+						System.out.println("Waiting for '" + name + "' server [" + hostname + ":" + port + "/" + s_rmiPrefix + name + "]");
+						first = false;
+					}
+				}
+				Thread.sleep(500);
+			}
+		}
+		catch (Exception e) {
+			System.err.println((char)27 + "[31;1mServer exception: " + (char)27 + "[0mUncaught exception");
+			e.printStackTrace();
+			System.exit(1);
+		}
+		return remoteResourceManager; // this line only reached if success
 	}
 
 	public RMIFlightResourceManager(String name)

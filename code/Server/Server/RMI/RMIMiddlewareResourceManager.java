@@ -25,7 +25,6 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager
 			s_serverName = args[0];
 		}
 
-
 		// Create the RMI server entry
 		try {
 			// Create a new Server object
@@ -84,86 +83,6 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager
 	public RMIMiddlewareResourceManager(String name)
 	{
 		super(name);
-	}
-
-	public void connectAllServers(String serverFlight, int portFlight, String nameFlight,
-                                String serverCar, int portCar, String nameCar,
-                                String serverRoom, int portRoom, String nameRoom)
-	{
-    // connect to flights server
-		try {
-			boolean first = true;
-			while (true) {
-				try {
-					Registry registry = LocateRegistry.getRegistry(serverFlight, portFlight);
-					flightRM = (IFlightResourceManager)registry.lookup(s_rmiPrefix + nameFlight);
-					System.out.println("Connected to '" + nameFlight + "' server [" + serverFlight + ":" + portFlight + "/" + s_rmiPrefix + nameFlight + "]");
-					break;
-				}
-				catch (NotBoundException|RemoteException e) {
-					if (first) {
-						System.out.println("Waiting for '" + nameFlight + "' server [" + serverFlight + ":" + portFlight + "/" + s_rmiPrefix + nameFlight + "]");
-						first = false;
-					}
-				}
-				Thread.sleep(500);
-			}
-		}
-		catch (Exception e) {
-			System.err.println((char)27 + "[31;1mServer exception: " + (char)27 + "[0mUncaught exception");
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-    // connect to cars server
-    try {
-      boolean first = true;
-      while (true) {
-        try {
-          Registry registry = LocateRegistry.getRegistry(serverCar, portCar);
-          carRM = (ICarResourceManager)registry.lookup(s_rmiPrefix + nameCar);
-          System.out.println("Connected to '" + nameCar + "' server [" + serverCar + ":" + portCar + "/" + s_rmiPrefix + nameCar + "]");
-          break;
-        }
-        catch (NotBoundException|RemoteException e) {
-          if (first) {
-            System.out.println("Waiting for '" + nameCar + "' server [" + serverCar + ":" + portCar + "/" + s_rmiPrefix + nameCar + "]");
-            first = false;
-          }
-        }
-        Thread.sleep(500);
-      }
-    }
-    catch (Exception e) {
-      System.err.println((char)27 + "[31;1mServer exception: " + (char)27 + "[0mUncaught exception");
-      e.printStackTrace();
-      System.exit(1);
-    }
-
-    // connect s server
-    try {
-      boolean first = true;
-      while (true) {
-        try {
-          Registry registry = LocateRegistry.getRegistry(serverRoom, portRoom);
-          roomRM = (IRoomResourceManager)registry.lookup(s_rmiPrefix + nameRoom);
-          System.out.println("Connected to '" + nameRoom + "' server [" + serverRoom + ":" + portRoom + "/" + s_rmiPrefix + nameRoom + "]");
-          break;
-        }
-        catch (NotBoundException|RemoteException e) {
-          if (first) {
-            System.out.println("Waiting for '" + nameRoom + "' server [" + serverRoom + ":" + portRoom + "/" + s_rmiPrefix + nameRoom + "]");
-            first = false;
-          }
-        }
-        Thread.sleep(500);
-      }
-    }
-    catch (Exception e) {
-      System.err.println((char)27 + "[31;1mServer exception: " + (char)27 + "[0mUncaught exception");
-      e.printStackTrace();
-      System.exit(1);
-    }
 	}
 
   public Remote getRemoteResourceManager(String server, int port, String name) {
