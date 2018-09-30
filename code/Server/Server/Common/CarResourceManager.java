@@ -6,10 +6,17 @@ import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
-public class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager
+public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager
 {
   // Create a new car location or add cars to an existing location
   // NOTE: if price <= 0 and the location already exists, it maintains its current price
+  private String m_name = "";
+  protected ICustomerResourceManager customerRM;
+
+  public CarResourceManager(String p_name) {
+    m_name = p_name;
+  };
+
   public boolean addCars(int xid, String location, int count, int price) throws RemoteException
   {
     Trace.info("RM::addCars(" + xid + ", " + location + ", " + count + ", $" + price + ") called");
@@ -57,4 +64,63 @@ public class CarResourceManager extends AbstractRMHashMapManager implements ICar
   {
     return queryPrice(xid, Car.getKey(location));
   }
+
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+  {
+    Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
+		// Read customer object if it exists (and read lock it)
+    Customer customer = null;
+    try {
+  		customer = getCustomer(xid, customerID);
+  		if (customer == null)
+  		{
+  			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist");
+  			return false;
+  		}
+    } catch (RemoteException e) {
+      Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist--remote exception");
+      return false;
+    }
+
+		// Check if the item is available
+		ReservableItem item = (ReservableItem)readData(xid, key);
+		if (item == null)
+		{
+			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ") failed--item doesn't exist");
+			return false;
+		}
+		else if (item.getCount() == 0)
+		{
+			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ") failed--No more items");
+			return false;
+		}
+		else
+		{
+			customer.reserve(key, location, item.getPrice());
+			writeData(xid, customer.getKey(), customer);
+
+			// Decrease the number of available items in the storage
+			item.setCount(item.getCount() - 1);
+			item.setReserved(item.getReserved() + 1);
+			writeData(xid, item.getKey(), item);
+
+			Trace.info("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ") succeeded");
+			return true;
+		}
+  }
+
+  /**
+   TODO public Customer getCustomer(int xid, int cid) {
+   customerRM.getCustomer(xid, cid)
+ }
+   */
+  public Customer getCustomer(int xid, int customerID) throws RemoteException
+  {
+    return customerRM.getCustomer(xid, customerID);
+  }
+
+  public String getName() throws RemoteException
+	{
+		return m_name;
+	}
 }

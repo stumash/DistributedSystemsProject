@@ -11,7 +11,6 @@ import Server.Common.*;
 import java.rmi.NotBoundException;
 import java.util.*;
 
-import java.rmi.Remote;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -23,9 +22,9 @@ import java.rmi.server.UnicastRemoteObject;
 // RNHashMap takes a key and stores the object as the value
 // Read data simply pulls object values from this RNHashMap
 
-public class RMICarResourceManager extends CarResourceManager implements IRemoteResourceManagerGetter
+public class RMICustomerResourceManager extends CustomerResourceManager
 {
-	private static String s_serverName = "CarServer";
+	private static String s_serverName = "CustomerServer";
 	//TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
 	private static String s_rmiPrefix = "group25_";
 
@@ -39,19 +38,17 @@ public class RMICarResourceManager extends CarResourceManager implements IRemote
 		// Create the RMI server entry
 		try {
 			// Create a new Server object
-			RMICarResourceManager server = new RMICarResourceManager(s_serverName);
-
-			server.customerRM = (ICustomerResourceManager)server.getRemoteResourceManager("localhost", 2003, "CustomerServer");
+			RMICustomerResourceManager server = new RMICustomerResourceManager(s_serverName);
 
 			// Dynamically generate the stub (client proxy)
-			ICarResourceManager resourceManager = (ICarResourceManager)UnicastRemoteObject.exportObject(server, 0);
+			ICustomerResourceManager resourceManager = (ICustomerResourceManager)UnicastRemoteObject.exportObject(server, 0);
 
 			// Bind the remote object's stub in the registry
 			Registry l_registry;
 			try {
-				l_registry = LocateRegistry.createRegistry(2001);
+				l_registry = LocateRegistry.createRegistry(2003);
 			} catch (RemoteException e) {
-				l_registry = LocateRegistry.getRegistry(2001);
+				l_registry = LocateRegistry.getRegistry(2003);
 			}
 			final Registry registry = l_registry;
 			registry.rebind(s_rmiPrefix + s_serverName, resourceManager);
@@ -82,35 +79,8 @@ public class RMICarResourceManager extends CarResourceManager implements IRemote
 			System.setSecurityManager(new SecurityManager());
 		}
 	}
-	public Remote getRemoteResourceManager(String hostname, int port, String name) {
-		Remote remoteResourceManager = null;
-		try {
-			boolean first = true;
-			while (true) {
-				try {
-					Registry registry = LocateRegistry.getRegistry(hostname, port);
-					remoteResourceManager = registry.lookup(s_rmiPrefix + name);
-					System.out.println("Connected to '" + name + "' server [" + hostname + ":" + port + "/" + s_rmiPrefix + name + "]");
-					break;
-				}
-				catch (NotBoundException|RemoteException e) {
-					if (first) {
-						System.out.println("Waiting for '" + name + "' server [" + hostname + ":" + port + "/" + s_rmiPrefix + name + "]");
-						first = false;
-					}
-				}
-				Thread.sleep(500);
-			}
-		}
-		catch (Exception e) {
-			System.err.println((char)27 + "[31;1mServer exception: " + (char)27 + "[0mUncaught exception");
-			e.printStackTrace();
-			System.exit(1);
-		}
-		return remoteResourceManager; // this line only reached if success
-	}
 
-	public RMICarResourceManager(String name)
+	public RMICustomerResourceManager(String name)
 	{
 		super(name);
 	}

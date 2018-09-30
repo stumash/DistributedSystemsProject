@@ -223,7 +223,7 @@ public abstract class Client
 
 				System.out.println("Deleting a customer from the database [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Customer ID: " + arguments.elementAt(2));
-				
+
 				int id = toInt(arguments.elementAt(1));
 				int customerID = toInt(arguments.elementAt(2));
 
@@ -239,7 +239,7 @@ public abstract class Client
 
 				System.out.println("Querying a flight [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Flight Number: " + arguments.elementAt(2));
-				
+
 				int id = toInt(arguments.elementAt(1));
 				int flightNum = toInt(arguments.elementAt(2));
 
@@ -252,7 +252,7 @@ public abstract class Client
 
 				System.out.println("Querying cars location [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Car Location: " + arguments.elementAt(2));
-				
+
 				int id = toInt(arguments.elementAt(1));
 				String location = arguments.elementAt(2);
 
@@ -265,7 +265,7 @@ public abstract class Client
 
 				System.out.println("Querying rooms location [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Room Location: " + arguments.elementAt(2));
-				
+
 				int id = toInt(arguments.elementAt(1));
 				String location = arguments.elementAt(2);
 
@@ -284,11 +284,11 @@ public abstract class Client
 
 				String bill = m_resourceManager.queryCustomerInfo(id, customerID);
 				System.out.print(bill);
-				break;               
+				break;
 			}
 			case QueryFlightPrice: {
 				checkArgumentsCount(3, arguments.size());
-				
+
 				System.out.println("Querying a flight price [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Flight Number: " + arguments.elementAt(2));
 
@@ -367,7 +367,7 @@ public abstract class Client
 				System.out.println("Reserving a room at a location [xid=" + arguments.elementAt(1) + "]");
 				System.out.println("-Customer ID: " + arguments.elementAt(2));
 				System.out.println("-Room Location: " + arguments.elementAt(3));
-				
+
 				int id = toInt(arguments.elementAt(1));
 				int customerID = toInt(arguments.elementAt(2));
 				String location = arguments.elementAt(3);
@@ -396,12 +396,12 @@ public abstract class Client
 
 				int id = toInt(arguments.elementAt(1));
 				int customerID = toInt(arguments.elementAt(2));
-				Vector<String> flightNumbers = new Vector<String>();
+				Vector<Integer> flightNumbers = new Vector<Integer>();
 				for (int i = 0; i < arguments.size() - 6; ++i)
 				{
-					flightNumbers.addElement(arguments.elementAt(3+i));
+					flightNumbers.addElement(toInt(arguments.elementAt(3+i)));
 				}
-				String location = arguments.elementAt(arguments.size()-2);
+				String location = arguments.elementAt(arguments.size()-3);
 				boolean car = toBoolean(arguments.elementAt(arguments.size()-2));
 				boolean room = toBoolean(arguments.elementAt(arguments.size()-1));
 

@@ -81,40 +81,40 @@ public class ResourceManager implements IResourceManager
 	{
 		Trace.info("RM::queryNum(" + xid + ", " + key + ") called");
 		ReservableItem curObj = (ReservableItem)readData(xid, key);
-		int value = 0;  
+		int value = 0;
 		if (curObj != null)
 		{
 			value = curObj.getCount();
 		}
 		Trace.info("RM::queryNum(" + xid + ", " + key + ") returns count=" + value);
 		return value;
-	}    
+	}
 
 	// Query the price of an item
 	protected int queryPrice(int xid, String key)
 	{
 		Trace.info("RM::queryPrice(" + xid + ", " + key + ") called");
 		ReservableItem curObj = (ReservableItem)readData(xid, key);
-		int value = 0; 
+		int value = 0;
 		if (curObj != null)
 		{
 			value = curObj.getPrice();
 		}
 		Trace.info("RM::queryPrice(" + xid + ", " + key + ") returns cost=$" + value);
-		return value;        
+		return value;
 	}
 
 	// Reserve an item
 	protected boolean reserveItem(int xid, int customerID, String key, String location)
 	{
-		Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );        
+		Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
 		// Read customer object if it exists (and read lock it)
 		Customer customer = (Customer)readData(xid, Customer.getKey(customerID));
 		if (customer == null)
 		{
 			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist");
 			return false;
-		} 
+		}
 
 		// Check if the item is available
 		ReservableItem item = (ReservableItem)readData(xid, key);
@@ -129,8 +129,8 @@ public class ResourceManager implements IResourceManager
 			return false;
 		}
 		else
-		{            
-			customer.reserve(key, location, item.getPrice());        
+		{
+			customer.reserve(key, location, item.getPrice());
 			writeData(xid, customer.getKey(), customer);
 
 			// Decrease the number of available items in the storage
@@ -140,7 +140,7 @@ public class ResourceManager implements IResourceManager
 
 			Trace.info("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ") succeeded");
 			return true;
-		}        
+		}
 	}
 
 	// Create a new flight, or add seats to existing flight
@@ -335,11 +335,11 @@ public class ResourceManager implements IResourceManager
 			return false;
 		}
 		else
-		{            
-			// Increase the reserved numbers of all reservable items which the customer reserved. 
+		{
+			// Increase the reserved numbers of all reservable items which the customer reserved.
  			RMHashMap reservations = customer.getReservations();
 			for (String reservedKey : reservations.keySet())
-			{        
+			{
 				ReservedItem reserveditem = customer.getReservedItem(reservedKey);
 				Trace.info("RM::deleteCustomer(" + xid + ", " + customerID + ") has reserved " + reserveditem.getKey() + " " +  reserveditem.getCount() +  " times");
 				ReservableItem item  = (ReservableItem)readData(xid, reserveditem.getKey());
@@ -374,8 +374,8 @@ public class ResourceManager implements IResourceManager
 		return reserveItem(xid, customerID, Room.getKey(location), location);
 	}
 
-	// Reserve bundle 
-	public boolean bundle(int xid, int customerId, Vector<String> flightNumbers, String location, boolean car, boolean room) throws RemoteException
+	// Reserve bundle
+	public boolean bundle(int xid, int customerId, Vector<Integer> flightNumbers, String location, boolean car, boolean room) throws RemoteException
 	{
 		return false;
 	}
@@ -385,4 +385,3 @@ public class ResourceManager implements IResourceManager
 		return m_name;
 	}
 }
- 
