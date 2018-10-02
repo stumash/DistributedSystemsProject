@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface ICarResourceManager extends Remote, ICustomerReservationManager
+public interface ICarResourceManager extends Remote, ICustomerReservationManager, IProxiable
 {
   /**
    * Reserve a car at this location.
@@ -60,5 +60,5 @@ throws RemoteException;
  * @return Name
  */
 public String getName()
-    throws RemoteException;
+throws RemoteException;
 }

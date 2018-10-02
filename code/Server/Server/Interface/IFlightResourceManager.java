@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface IFlightResourceManager extends Remote, ICustomerReservationManager
+public interface IFlightResourceManager extends Remote, ICustomerReservationManager, IProxiable
 {
   /**
    * Add seats to a flight.

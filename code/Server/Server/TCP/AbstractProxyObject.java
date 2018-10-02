@@ -1,12 +1,14 @@
 package Server.TCP;
 
 import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public abstract class AbstractProxyObject implements Serializable
 {
-  private String hostname;
-  private int port;
-  private String boundName;
+  protected String hostname;
+  protected int port;
+  protected String boundName;
 
   public AbstractProxyObject(String hostname, int port, String boundName)
   {
@@ -20,7 +22,7 @@ public abstract class AbstractProxyObject implements Serializable
     return this.boundName;
   }
 
-  private Message sendAndReceiveMessage(Message messageToSend)
+  protected Message sendAndReceiveMessage(Message messageToSend)
   {
     messageToSend.proxyObjectBoundName = boundName;
 

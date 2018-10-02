@@ -7,7 +7,8 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface ICustomerResourceManager extends Remote {
+public interface ICustomerResourceManager extends Remote, IProxiable
+{
   /**
    * Add customer.
    *

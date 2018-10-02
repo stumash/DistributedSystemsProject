@@ -103,4 +103,9 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
   {
     return (Customer)readData(xid, Customer.getKey(customerID));
   }
+
+  public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName)
+  {
+    return new ProxyCustomerResourceManager(hostname, port, boundName);
+  }
 }

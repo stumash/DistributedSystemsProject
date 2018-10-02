@@ -67,13 +67,13 @@ public abstract class RoomResourceManager extends AbstractRMHashMapManager imple
 	{
 		return m_name;
 	}
-	public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+	private boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
 	{
 		Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
 		// Read customer object if it exists (and read lock it)
 		Customer customer = null;
     try {
-  		customer = getCustomer(xid, customerID);
+  		customer = customerRM.getCustomer(xid, customerID);
   		if (customer == null)
   		{
   			Trace.warn("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ")  failed--customer doesn't exist");
@@ -111,8 +111,8 @@ public abstract class RoomResourceManager extends AbstractRMHashMapManager imple
 		}
 	}
 
-	public Customer getCustomer(int xid, int customerID) throws RemoteException
-	{
-		return customerRM.getCustomer(xid, customerID);
-	}
+	public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName)
+  {
+    return new ProxyRoomResourceManager(hostname, port, boundName);
+  }
 }
