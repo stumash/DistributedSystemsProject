@@ -7,3 +7,4 @@ java.policy
 # ide-generated
 .idea
 *.iml
+*.log

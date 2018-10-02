@@ -29,7 +29,7 @@ public class Customer extends RMItem
 		return m_ID;
 	}
 
-	public void reserve(String key, String location, int price)
+	public synchronized void reserve(String key, String location, int price)
 	{
 		ReservedItem reservedItem = getReservedItem(key);
 		if (reservedItem == null)
@@ -94,4 +94,3 @@ public class Customer extends RMItem
 		return obj;
 	}
 }
-
