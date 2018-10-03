@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class Message implements Serializable
 {
-  String proxyObjectBoundName;
-  Boolean requestSuccessful;
-  Object requestedValue;
+  public String proxyObjectBoundName;
+  public Boolean requestSuccessful;
+  public Object requestedValue;
 }

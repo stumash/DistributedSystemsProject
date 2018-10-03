@@ -1,6 +1,6 @@
 package Client;
 
-import Server.Interface.*;
+import Server.Interface.IResourceManager;
 
 import java.util.*;
 import java.io.*;
