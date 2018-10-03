@@ -54,107 +54,106 @@ public class TCPProxyObjectServer
   {
     new Thread(() -> {
       while(true) {
-        Socket connectionSocket = null;
         try {
-          connectionSocket = listenerSocket.accept();
+          Socket connectionSocket = listenerSocket.accept();
+          new Thread(() -> {
+            ObjectInputStream objectInputStream;
+            ObjectOutputStream objectOutputStream;
+            try {
+              objectInputStream =
+                new ObjectInputStream(connectionSocket.getInputStream());
+              objectOutputStream =
+                new ObjectOutputStream(connectionSocket.getOutputStream());
+            } catch (Exception err) {
+              Trace.info("TCPProxyObjectServer object stream initialization -> failed");
+              return;
+            }
+
+            Message inputMessage = null;
+            try {
+              inputMessage = (Message)objectInputStream.readObject();
+            } catch (Exception e) {
+              Trace.info("ProxyServer::(Message)readObject() -> invalid Message, failed to read object");
+              return;
+            }
+
+            Message outputMessage = null;
+            if (!(inputMessage instanceof ProxyMethodCallMessage)) {
+              // if it's not a ProxyMethodCallMessage, then it's just a method to request a proxy object
+              outputMessage = new Message();
+              try {
+                outputMessage.requestedValue = getProxy(inputMessage.proxyObjectBoundName);
+                outputMessage.requestSuccessful = true;
+              } catch (Exception e) {
+                Trace.info("ProxyServer::getProxy(" + inputMessage.proxyObjectBoundName + ") -> proxy object not found");
+                outputMessage.requestSuccessful = false;
+              }
+            }
+            else if (inputMessage instanceof ProxyMethodCallMessage) {
+              ProxyMethodCallMessage PMCinputMessage = (ProxyMethodCallMessage)inputMessage;
+              ProxyMethodCallMessage PMCoutputMessage = new ProxyMethodCallMessage();
+
+              IProxiable realObject = null;
+              try {
+                realObject = getReal(PMCinputMessage.proxyObjectBoundName);
+              } catch (Exception e) {
+                Trace.info("ProxyServer::getReal(" + PMCinputMessage.proxyObjectBoundName + ") -> real object not found");
+                PMCoutputMessage.requestSuccessful = false;
+                try {
+                  objectOutputStream.writeObject(PMCoutputMessage);
+                } catch(Exception err) {
+                  Trace.info("ProxyServer could not send on output stream");
+                }
+                return;
+              }
+
+              Class cls = realObject.getClass();
+              Object outputObject = null;
+              try {
+                Method m = cls.getMethod(PMCinputMessage.methodName, PMCinputMessage.methodArgTypes);
+                outputObject = m.invoke(realObject, PMCinputMessage.methodArgs);
+              } catch (Exception e) {
+                Trace.info("ProxyServer could not invoke method " + PMCinputMessage.methodName + "-> failed");
+                PMCoutputMessage.requestedValue = null;
+                PMCoutputMessage.requestSuccessful = false;
+                try {
+                  objectOutputStream.writeObject(PMCoutputMessage);
+                } catch(Exception err) {
+                  Trace.info("ProxyServer could not send on output stream");
+                }
+                return;
+              }
+
+              PMCoutputMessage.requestedValue = outputObject;
+              PMCoutputMessage.requestSuccessful = true;
+
+              if (outputObject instanceof Customer) {
+                Customer customer = (Customer)outputObject;
+                AbstractProxyObject proxyCustomer;
+                try {
+                  proxyCustomer = getProxy(customer.getKey());
+                } catch (Exception err) {
+                  bind(customer.getKey(), customer);
+                  proxyCustomer = getProxy(customer.getKey());
+                }
+
+                PMCoutputMessage.requestedValue = proxyCustomer;
+                PMCoutputMessage.requestedValueIsCustomer = true;
+              }
+
+              outputMessage = PMCoutputMessage;
+            }
+
+            try {
+              objectOutputStream.writeObject(outputMessage);
+            } catch(Exception e) {
+              Trace.info("ProxyServer could not send on output stream");
+            }
+          }).start();
         } catch (Exception e) {
           Trace.info("Couldn't initialize listener socket");
           System.exit(1);
         }
-        new Thread(() -> {
-          ObjectInputStream objectInputStream;
-          ObjectOutputStream objectOutputStream;
-          try {
-            objectInputStream =
-              new ObjectInputStream(connectionSocket.getInputStream());
-            objectOutputStream =
-              new ObjectOutputStream(connectionSocket.getOutputStream());
-          } catch (Exception err) {
-            Trace.info("TCPProxyObjectServer object stream initialization -> failed");
-            return;
-          }
-
-          Message inputMessage = null;
-          try {
-            inputMessage = (Message)objectInputStream.readObject();
-          } catch (Exception e) {
-            Trace.info("ProxyServer::(Message)readObject() -> invalid Message, failed to read object");
-            return;
-          }
-
-          Message outputMessage = null;
-          if (!(inputMessage instanceof ProxyMethodCallMessage)) {
-            // if it's not a ProxyMethodCallMessage, then it's just a method to request a proxy object
-            outputMessage = new Message();
-            try {
-              outputMessage.requestedValue = getProxy(inputMessage.proxyObjectBoundName);
-              outputMessage.requestSuccessful = true;
-            } catch (Exception e) {
-              Trace.info("ProxyServer::getProxy(" + inputMessage.proxyObjectBoundName + ") -> proxy object not found");
-              outputMessage.requestSuccessful = false;
-            }
-          }
-          else if (inputMessage instanceof ProxyMethodCallMessage) {
-            ProxyMethodCallMessage PMCinputMessage = (ProxyMethodCallMessage)inputMessage;
-            ProxyMethodCallMessage PMCoutputMessage = new ProxyMethodCallMessage();
-
-            IProxiable realObject = null;
-            try {
-              realObject = getReal(PMCinputMessage.proxyObjectBoundName);
-            } catch (Exception e) {
-              Trace.info("ProxyServer::getReal(" + PMCinputMessage.proxyObjectBoundName + ") -> real object not found");
-              PMCoutputMessage.requestSuccessful = false;
-              try {
-                objectOutputStream.writeObject(PMCoutputMessage);
-              } catch(Exception err) {
-                Trace.info("ProxyServer could not send on output stream");
-              }
-              return;
-            }
-
-            Class cls = realObject.getClass();
-            Object outputObject = null;
-            try {
-              Method m = cls.getMethod(PMCinputMessage.methodName, PMCinputMessage.methodArgTypes);
-              outputObject = m.invoke(realObject, PMCinputMessage.methodArgs);
-            } catch (Exception e) {
-              Trace.info("ProxyServer could not invoke method " + PMCinputMessage.methodName + "-> failed");
-              PMCoutputMessage.requestedValue = null;
-              PMCoutputMessage.requestSuccessful = false;
-              try {
-                objectOutputStream.writeObject(PMCoutputMessage);
-              } catch(Exception err) {
-                Trace.info("ProxyServer could not send on output stream");
-              }
-              return;
-            }
-
-            PMCoutputMessage.requestedValue = outputObject;
-            PMCoutputMessage.requestSuccessful = true;
-
-            if (outputObject instanceof Customer) {
-              Customer customer = (Customer)outputObject;
-              AbstractProxyObject proxyCustomer;
-              try {
-                proxyCustomer = getProxy(customer.getKey());
-              } catch (Exception err) {
-                bind(customer.getKey(), customer);
-                proxyCustomer = getProxy(customer.getKey());
-              }
-
-              PMCoutputMessage.requestedValue = proxyCustomer;
-              PMCoutputMessage.requestedValueIsCustomer = true;
-            }
-
-            outputMessage = PMCoutputMessage;
-          }
-
-          try {
-            objectOutputStream.writeObject(outputMessage);
-          } catch(Exception e) {
-            Trace.info("ProxyServer could not send on output stream");
-          }
-        }).start();
       }
     }).start();
   }
