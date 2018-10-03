@@ -1,6 +1,8 @@
+package Server.TCP;
+
 public class ProxyMethodCallMessage extends Message {
   String methodName;
-  String[] methodArgs;
+  Object[] methodArgs;
   Class[] methodArgTypes;
   Boolean requestedValueIsCustomer;
 }

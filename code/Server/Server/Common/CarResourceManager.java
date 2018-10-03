@@ -1,12 +1,13 @@
 package Server.Common;
 
 import Server.Interface.*;
+import Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
-public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager
+public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager, ICustomerReservationManager
 {
   // Create a new car location or add cars to an existing location
   // NOTE: if price <= 0 and the location already exists, it maintains its current price
@@ -65,7 +66,7 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
     return queryPrice(xid, Car.getKey(location));
   }
 
-  private boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
   {
     Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
 		// Read customer object if it exists (and read lock it)

@@ -6,6 +6,7 @@
 package Server.Common;
 
 import Server.Interface.*;
+import Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
@@ -384,4 +385,10 @@ public class ResourceManager implements IResourceManager
 	{
 		return m_name;
 	}
+
+	// TODO make resource manager not extend IResourcemanager
+	public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName)
+  {
+    return null;
+  }
 }

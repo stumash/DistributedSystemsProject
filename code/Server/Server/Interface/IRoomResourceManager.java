@@ -3,9 +3,11 @@ package Server.Interface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+import Server.TCP.IProxiable;
+
 import java.util.*;
 
-public interface IRoomResourceManager extends Remote, ICustomerReservationManager, IProxiable
+public interface IRoomResourceManager extends Remote, IProxiable
 {
   /**
    * Add room at a location.

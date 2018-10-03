@@ -1,12 +1,13 @@
 package Server.Common;
 
 import Server.Interface.*;
+import Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
-public abstract class FlightResourceManager extends AbstractRMHashMapManager implements IFlightResourceManager
+public abstract class FlightResourceManager extends AbstractRMHashMapManager implements IFlightResourceManager, ICustomerReservationManager
 {
   // Create a new flight, or add seats to existing flight
   // NOTE: if flightPrice <= 0 and the flight already exists, it maintains its current price
@@ -71,7 +72,7 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
     return m_name;
   }
 
-  private boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
   {
     Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
     // Read customer object if it exists (and read lock it)

@@ -1,6 +1,7 @@
 package Server.Interface;
 
 import Server.Common.Customer;
+import Server.TCP.IProxiable;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

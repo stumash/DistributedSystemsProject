@@ -3,6 +3,8 @@ package Server.Interface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+import Server.TCP.IProxiable;
+
 import java.util.*;
 
 /**
@@ -21,7 +23,7 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface IResourceManager extends Remote
+public interface IResourceManager extends Remote, IProxiable
 {
     /**
      * Add seats to a flight.

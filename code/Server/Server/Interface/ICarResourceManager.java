@@ -3,9 +3,11 @@ package Server.Interface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+import Server.TCP.IProxiable;
+
 import java.util.*;
 
-public interface ICarResourceManager extends Remote, ICustomerReservationManager, IProxiable
+public interface ICarResourceManager extends Remote, IProxiable
 {
   /**
    * Reserve a car at this location.

@@ -9,5 +9,5 @@ import Server.Common.Customer;
 
 public interface ICustomerReservationManager
 {
-  private boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException;
+  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException;
 }

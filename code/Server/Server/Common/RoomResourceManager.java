@@ -1,12 +1,13 @@
 package Server.Common;
 
 import Server.Interface.*;
+import Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
-public abstract class RoomResourceManager extends AbstractRMHashMapManager implements IRoomResourceManager
+public abstract class RoomResourceManager extends AbstractRMHashMapManager implements IRoomResourceManager, ICustomerReservationManager
 {
   // Create a new room location or add rooms to an existing location
 	// NOTE: if price <= 0 and the room location already exists, it maintains its current price
@@ -67,7 +68,7 @@ public abstract class RoomResourceManager extends AbstractRMHashMapManager imple
 	{
 		return m_name;
 	}
-	private boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
+	public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException
 	{
 		Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called" );
 		// Read customer object if it exists (and read lock it)

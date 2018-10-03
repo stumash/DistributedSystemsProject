@@ -1,8 +1,12 @@
 package Server.TCP;
 
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.IOException;
+
 
 public abstract class AbstractProxyObject implements Serializable
 {
@@ -22,18 +26,18 @@ public abstract class AbstractProxyObject implements Serializable
     return this.boundName;
   }
 
-  protected Message sendAndReceiveMessage(Message messageToSend)
+  protected Message sendAndReceiveMessage(Message messageToSend) throws UnknownHostException, IOException, ClassNotFoundException
   {
     messageToSend.proxyObjectBoundName = boundName;
 
     Socket socket = new Socket(hostname, port);
 
     ObjectOutputStream objectOutput =
-      new ObjectInputStream(socket.getOutputStream());
+      new ObjectOutputStream(socket.getOutputStream());
     ObjectInputStream objectInput =
       new ObjectInputStream(socket.getInputStream());
 
     objectOutput.writeObject(messageToSend);
-    return objectInput.readObject();
+    return (Message)objectInput.readObject();
   }
 }

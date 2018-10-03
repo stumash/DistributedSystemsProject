@@ -82,6 +82,7 @@ public class RMIFlightResourceManager extends FlightResourceManager implements I
 			System.setSecurityManager(new SecurityManager());
 		}
 	}
+	
 	public Remote getRemoteResourceManager(String hostname, int port, String name) {
 		Remote remoteResourceManager = null;
 		try {

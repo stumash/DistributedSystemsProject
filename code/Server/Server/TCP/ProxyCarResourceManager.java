@@ -1,4 +1,11 @@
+package Server.TCP;
+
 import java.rmi.RemoteException;
+import java.io.*;
+import java.util.*;
+
+import Server.Interface.*;
+import Server.Common.Trace;
 
 public class ProxyCarResourceManager extends AbstractProxyObject implements ICarResourceManager
 {
@@ -14,14 +21,20 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public boolean reserveCar(int id, int customerID, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
-    message.proxyObjectBoundName = this.boundName;
-    message.methodName = "reserveCar";
-    message.methodArgs = new String[] {Integer.toString(id), Integer.toString(customerID), location};
-    message.methodArgTypes = new Class[] {Integer.class, Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
-    return recvMessage.requestSuccessful;
+      ProxyMethodCallMessage message = new ProxyMethodCallMessage();
+      message.proxyObjectBoundName = this.boundName;
+      message.methodName = "reserveCar";
+      message.methodArgs = new Object[] {new Integer(id), new Integer(customerID), location};
+      message.methodArgTypes = new Class[] {Integer.class, Integer.class, String.class};
+      Message recvMessage = null;
+      try {
+        recvMessage = sendAndReceiveMessage(message);
+      } catch (Exception e) {
+        Trace.info("ProxyCarResourceManager::sendAndReceiveMessage() in reserveCar -> failed");
+        throw new RemoteException("");
+      }
+      return recvMessage.requestSuccessful;
   }
 
   /**
@@ -34,13 +47,19 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public boolean addCars(int id, String location, int numCars, int price) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "addCars";
-    message.methodArgs = new String[] {Integer.toString(id), location, Integer.toString(numCars), Integer.toString(price)};
+    message.methodArgs = new Object[] {new Integer(id), location, new Integer(numCars), new Integer(price)};
     message.methodArgTypes = new Class[] {Integer.class, String.class, Integer.class, Integer.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyCarResourceManager::sendAndReceiveMessage() in addCars  -> failed");
+      throw new RemoteException("");
+    }
     return recvMessage.requestSuccessful;
   }
 
@@ -54,13 +73,19 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public boolean deleteCars(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "deleteCars";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyCarResourceManager::sendAndReceiveMessage() in deleteCars -> failed");
+      throw new RemoteException("");
+    }
     return recvMessage.requestSuccessful;
   }
 
@@ -72,16 +97,22 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public int queryCars(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "queryCars";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyCarResourceManager::sendAndReceiveMessage() in queryCars -> failed");
+      throw new RemoteException("");
+    }
     if (recvMessage.requestedValue == null) {
-      Trace.info("ProxyCarResourceManager::queryCars(" + id + "," + location ") -> requestedValue is null");
-      throw RemoteException;
+      Trace.info("ProxyCarResourceManager::queryCars(" + id + "," + location +") -> requestedValue is null");
+      throw new RemoteException("Could not query cars");
     } else {
       return (Integer)recvMessage.requestedValue;
     }
@@ -97,16 +128,22 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public int queryCarsPrice(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "queryCarsPrice";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyCarResourceManager::sendAndReceiveMessage() in queryCarsPrice-> failed");
+      throw new RemoteException("");
+    }
     if (recvMessage.requestedValue == null) {
-      Trace.info("ProxyCarResourceManager::queryCarsPrice(" + id + "," + location ") -> requestedValue is null");
-      throw RemoteException;
+      Trace.info("ProxyCarResourceManager::queryCarsPrice(" + id + "," + location + ") -> requestedValue is null");
+      throw new RemoteException("Oh no!");
     } else {
       return (Integer)recvMessage.requestedValue;
     }
@@ -120,7 +157,7 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
    */
   public String getName() throws RemoteException
   {
-    // throws RemoteException? TODO
+    return "Y U DO THIS?";
   }
 
 

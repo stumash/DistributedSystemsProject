@@ -6,8 +6,11 @@
 package Server.Common;
 
 import java.util.*;
+import Server.Interface.ICustomer;
+import Server.TCP.AbstractProxyObject;
+import Server.TCP.ProxyCustomer;
 
-public class Customer extends RMItem
+public class Customer extends RMItem implements ICustomer
 {
 	private int m_ID;
 	private RMHashMap m_reservations;
@@ -19,9 +22,10 @@ public class Customer extends RMItem
 		m_ID = id;
 	}
 
-	public void setID(int id)
+	public boolean setID(int id)
 	{
 		m_ID = id;
+		return true;
 	}
 
 	public int getID()
@@ -29,21 +33,24 @@ public class Customer extends RMItem
 		return m_ID;
 	}
 
-	public synchronized void reserve(String key, String location, int price)
+	public boolean reserve(String key, String location, int price)
 	{
-		ReservedItem reservedItem = getReservedItem(key);
-		if (reservedItem == null)
-		{
-			// Customer doesn't already have a reservation for this resource, so create a new one now
-			reservedItem = new ReservedItem(key, location, 1, price);
+		synchronized(this) {
+			ReservedItem reservedItem = getReservedItem(key);
+			if (reservedItem == null)
+			{
+				// Customer doesn't already have a reservation for this resource, so create a new one now
+				reservedItem = new ReservedItem(key, location, 1, price);
+			}
+			else
+			{
+				reservedItem.setCount(reservedItem.getCount() + 1);
+				// NOTE: latest price overrides existing price
+				reservedItem.setPrice(price);
+			}
+			m_reservations.put(reservedItem.getKey(), reservedItem);
+			return true;
 		}
-		else
-		{
-			reservedItem.setCount(reservedItem.getCount() + 1);
-			// NOTE: latest price overrides existing price
-			reservedItem.setPrice(price);
-		}
-		m_reservations.put(reservedItem.getKey(), reservedItem);
 	}
 
 	public ReservedItem getReservedItem(String key)
@@ -93,4 +100,9 @@ public class Customer extends RMItem
 		obj.m_reservations = (RMHashMap)m_reservations.clone();
 		return obj;
 	}
+
+	public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
+		return new ProxyCustomer(hostname, port, boundName);
+	}
+
 }

@@ -1,6 +1,7 @@
 package Server.Common;
 
 import Server.Interface.*;
+import Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
@@ -164,6 +165,11 @@ public abstract class MiddlewareResourceManager implements IResourceManager
 
     return true;
   }
+  public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName)
+  {
+    return new ProxyMiddlewareResourceManager(hostname, port, boundName);
+  }
+
 
   public String getName() throws RemoteException
   {

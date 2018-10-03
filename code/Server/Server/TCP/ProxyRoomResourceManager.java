@@ -1,3 +1,10 @@
+package Server.TCP;
+
+import java.rmi.RemoteException;
+
+import Server.Interface.*;
+import Server.Common.Trace;
+
 public class ProxyRoomResourceManager extends AbstractProxyObject implements IRoomResourceManager
 {
   public ProxyRoomResourceManager(String hostname, int port, String boundName)
@@ -6,12 +13,18 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   }
   public boolean addRooms(int id, String location, int numRooms, int price) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "addRooms";
-    message.methodArgs = new String[] {Integer.toString(id), location, Integer.toString(numRooms), Integer.toString(price)};
+    message.methodArgs = new Object[] {new Integer(id), location, new Integer(numRooms), new Integer(price)};
     message.methodArgTypes = new Class[] {Integer.class, String.class, Integer.class, Integer.class};
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyRoomResourceManager::sendAndReceiveMessage() in addRooms -> failed");
+      throw new RemoteException("");
+    }
     return recvMessage.requestSuccessful;
   }
   /**
@@ -23,13 +36,19 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   */
   public boolean deleteRooms(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "deleteRooms";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyRoomResourceManager::sendAndReceiveMessage() in deleteRooms -> failed");
+      throw new RemoteException("");
+    }
     return recvMessage.requestSuccessful;
   }
   /**
@@ -39,16 +58,22 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   */
   public int queryRooms(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "queryRooms";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyRoomResourceManager::sendAndReceiveMessage() in queryRooms -> failed");
+      throw new RemoteException("");
+    }
     if (recvMessage.requestedValue == null) {
-      Trace.info("ProxyRoomResourceManager::queryRooms(" + id + "," + location ") -> requestedValue is null");
-      throw RemoteException;
+      Trace.info("ProxyRoomResourceManager::queryRooms(" + id + "," + location +") -> requestedValue is null");
+      throw new RemoteException("Oh no!");
     } else {
       return (Integer)recvMessage.requestedValue;
     }
@@ -61,16 +86,22 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   */
   public int queryRoomsPrice(int id, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "queryRoomsPrice";
-    message.methodArgs = new String[] {Integer.toString(id), location};
+    message.methodArgs = new Object[] {new Integer(id), location};
     message.methodArgTypes = new Class[] {Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyRoomResourceManager::sendAndReceiveMessage() in queryRoomsPrice -> failed");
+      throw new RemoteException("");
+    }
     if (recvMessage.requestedValue == null) {
-      Trace.info("ProxyRoomsResourceManager::queryRoomsPrice(" + id + "," + location ") -> requestedValue is null");
-      throw RemoteException;
+      Trace.info("ProxyRoomsResourceManager::queryRoomsPrice(" + id + "," + location +") -> requestedValue is null");
+      throw new RemoteException("Oh no!");
     } else {
       return (Integer)recvMessage.requestedValue;
     }
@@ -82,13 +113,19 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   */
   public boolean reserveRoom(int id, int customerID, String location) throws RemoteException
   {
-    Message message = new ProxyMethodCallMessage();
+    ProxyMethodCallMessage message = new ProxyMethodCallMessage();
     message.proxyObjectBoundName = this.boundName;
     message.methodName = "reserveRoom";
-    message.methodArgs = new String[] {Integer.toString(id), Integer.toString(customerID), location};
+    message.methodArgs = new Object[] {new Integer(id), new Integer(customerID), location};
     message.methodArgTypes = new Class[] {Integer.class, Integer.class, String.class};
 
-    Message recvMessage = sendAndReceiveMessage(message);
+    Message recvMessage = null;
+    try {
+      recvMessage = sendAndReceiveMessage(message);
+    } catch (Exception e) {
+      Trace.info("ProxyRoomResourceManager::sendAndReceiveMessage() in reserveRoom -> failed");
+      throw new RemoteException("");
+    }
     return recvMessage.requestSuccessful;
   }
   /**
@@ -98,7 +135,7 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
   */
   public String getName() throws RemoteException
   {
-    // throws RemoteException? TODO
+    return "Y U DO THIS?";
   }
 
   public AbstractProxyObject makeProxyObject(String p_hostname, int p_port, String p_boundName)
