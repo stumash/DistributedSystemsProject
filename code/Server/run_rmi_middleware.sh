@@ -1,4 +1,4 @@
-./run_rmi.sh "$1" > /dev/null
+#!/usr/bin/env bash
 
 echo 'Usage: run_rmi_middleware.sh [middleport, [customerHostname, [customerPort, [flightHostname, [flightPort,'
 echo ' [roomHostname, [roomPort, [carHostname, [carPort]]]]]]]]]'

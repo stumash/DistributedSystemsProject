@@ -48,7 +48,7 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
             try {
                 l_registry = LocateRegistry.createRegistry(s_serverPort);
             } catch (RemoteException e) {
-                l_registry = LocateRegistry.getRegistry(s_serverPort);
+                l_registry = LocateRegistry.getRegistry(2003);
             }
             final Registry registry = l_registry;
             registry.rebind(s_rmiPrefix + s_serverName, resourceManager);

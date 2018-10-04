@@ -7,10 +7,21 @@ import Server.Common.*;
 
 public class TCPCustomerResourceManager extends CustomerResourceManager {
     private static String s_serverName = "CustomerServer";
+    private static int s_serverPort = 2003;
     private static String s_tcpPrefix = "group25_";
 
     public static void main(String[] args) {
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2003);
+        if (args.length > 0) {
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for customerserver port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", s_serverPort);
         TCPCustomerResourceManager customerRM = new TCPCustomerResourceManager(s_serverName);
 
         server.bind(s_tcpPrefix + s_serverName, customerRM);

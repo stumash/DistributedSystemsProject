@@ -13,7 +13,6 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
     private static String s_serverHost = "localhost";
     private static int s_serverPort = 2005;
     private static String s_serverName = "MiddlewareServer";
-
     private static String s_tcpPrefix = "group25_";
 
     public static void main(String args[]) {
@@ -67,7 +66,6 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
                 ObjectInputStream  osIn  = new ObjectInputStream(socket.getInputStream());
 
                 osOut.writeObject(messageToSend);
-
                 try {
                     Message messageReceived = (Message) osIn.readObject();
                     AbstractProxyObject receivedObject = (AbstractProxyObject) messageReceived.requestedValue;

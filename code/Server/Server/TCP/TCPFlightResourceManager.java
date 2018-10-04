@@ -8,12 +8,37 @@ import Server.Interface.*;
 
 public class TCPFlightResourceManager extends FlightResourceManager implements IProxyResourceManagerGetter {
     private static String s_serverName = "FlightServer";
+    private static int s_serverPort = 2000;
     private static String s_tcpPrefix = "group25_";
+    private static String s_customerServerHostname = "localhost";
+    private static int s_customerServerPort = 2003;
 
     public static void main(String[] args) {
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2000);
+        if (args.length > 0) {
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for flightserver port (default 2000)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        if (args.length > 1) {
+            s_customerServerHostname = args[1];
+        }
+        if (args.length > 2) {
+            try {
+                s_customerServerPort = Integer.parseInt(args[2]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", s_serverPort);
         TCPFlightResourceManager flightRM = new TCPFlightResourceManager(s_serverName);
-        flightRM.customerRM = (ICustomerResourceManager) flightRM.getProxyResourceManager("localhost", 2003, "CustomerServer");
+        flightRM.customerRM = (ICustomerResourceManager) flightRM.getProxyResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
 
         server.bind(s_tcpPrefix + s_serverName, flightRM);
         server.runServer();

@@ -1,4 +1,5 @@
-echo 'Usage: ./run_server.sh [rmiport, [RMname, [customerHostname, [customerPort]]]]'
+#!/usr/bin/env bash
+echo 'Usage: ./run_rmi_server.sh [rmiport, [RMname, [customerHostname, [customerPort]]]]'
 echo '$1 registry port'
 echo '$2 RMname'
 echo '$3 CustomerServer hostname'

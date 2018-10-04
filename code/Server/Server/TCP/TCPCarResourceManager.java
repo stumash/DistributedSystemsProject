@@ -9,13 +9,38 @@ import Server.Interface.*;
 public class TCPCarResourceManager extends CarResourceManager implements IProxyResourceManagerGetter
 {
     private static String s_serverName = "CarServer";
+    private static int s_serverPort = 2001;
     private static String s_tcpPrefix = "group25_";
+    private static String s_customerServerHostname = "localhost";
+    private static int s_customerServerPort = 2003;
 
     public static void main(String[] args)
     {
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2001);
+        if (args.length > 0) {
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for carserver port (default 2001)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        if (args.length > 1) {
+            s_customerServerHostname = args[1];
+        }
+        if (args.length > 2) {
+            try {
+                s_customerServerPort = Integer.parseInt(args[2]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", s_serverPort);
         TCPCarResourceManager carRM = new TCPCarResourceManager(s_serverName);
-        carRM.customerRM = (ICustomerResourceManager) carRM.getProxyResourceManager("localhost", 2003, "CustomerServer");
+        carRM.customerRM = (ICustomerResourceManager) carRM.getProxyResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
 
         server.bind(s_tcpPrefix + s_serverName, carRM);
         server.runServer();
