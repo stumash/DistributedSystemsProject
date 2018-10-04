@@ -7,7 +7,6 @@ import java.util.*;
 
 import Server.Common.Customer;
 
-public interface ICustomerReservationManager
-{
-  public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException;
+public interface ICustomerReservationManager {
+    public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException;
 }

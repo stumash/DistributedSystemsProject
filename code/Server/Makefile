@@ -1,12 +1,13 @@
 all: java.policy compile-server-rmi compile-server-tcp
 
-java.policy: FORCE
+.PHONY: compile-server-rmi compile-server-tcp
+
+
+java.policy:
 	@echo "Creating server java policy"
 	@echo "grant codebase \"file:`pwd`/\" {" > java.policy
 	@echo "permission java.security.AllPermission;" >> java.policy
 	@echo "};" >> java.policy
-
-FORCE: ;
 
 compile-server-rmi: Server/RMI/*.java Server/Interface/IResourceManager.java Server/Common/*.java
 	javac Server/RMI/*.java Server/Interface/IResourceManager.java Server/Common/*.java
@@ -39,4 +40,3 @@ Trace.jar: Server/Common/Trace.java
 	@echo Compiling Trace.java into jar
 	javac Server/Common/Trace.java
 	jar cvf Trace.jar Server/Common/Trace.class
-

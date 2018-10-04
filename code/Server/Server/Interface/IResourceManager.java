@@ -9,13 +9,13 @@ import java.util.*;
 
 /**
  * Simplified version from CSE 593 Univ. of Washington
- *
+ * <p>
  * Distributed  System in Java.
- *
+ * <p>
  * failure reporting is done using two pieces, exceptions and boolean
  * return values.  Exceptions are used for systemy things. Return
  * values are used for operations that would affect the consistency
- *
+ * <p>
  * If there is a boolean return value and you're not sure how it
  * would be used in your implementation, ignore it.  I used boolean
  * return values in the interface generously to allow flexibility in
@@ -23,11 +23,10 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface IResourceManager extends Remote, IProxiable
-{
+public interface IResourceManager extends Remote, IProxiable {
     /**
      * Add seats to a flight.
-     *
+     * <p>
      * In general this will be used to create a new
      * flight, but it should be possible to add seats to an existing flight.
      * Adding to an existing flight should overwrite the current price of the
@@ -36,29 +35,29 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Add car at a location.
-     *
+     * <p>
      * This should look a lot like addFlight, only keyed on a string location
      * instead of a flight number.
      *
      * @return Success
      */
     public boolean addCars(int id, String location, int numCars, int price)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Add room at a location.
-     *
+     * <p>
      * This should look a lot like addFlight, only keyed on a string location
      * instead of a flight number.
      *
      * @return Success
      */
     public boolean addRooms(int id, String location, int numRooms, int price)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Add customer.
@@ -66,7 +65,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Unique customer identifier
      */
     public int newCustomer(int id)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Add customer with id.
@@ -74,38 +73,38 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean newCustomer(int id, int cid)
-        throws RemoteException;
+            throws RemoteException;
 
     /**
      * Delete the flight.
-     *
+     * <p>
      * deleteFlight implies whole deletion of the flight. If there is a
      * reservation on the flight, then the flight cannot be deleted
      *
      * @return Success
      */
     public boolean deleteFlight(int id, int flightNum)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Delete all cars at a location.
-     *
+     * <p>
      * It may not succeed if there are reservations for this location
      *
      * @return Success
      */
     public boolean deleteCars(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Delete all rooms at a location.
-     *
+     * <p>
      * It may not succeed if there are reservations for this location.
      *
      * @return Success
      */
     public boolean deleteRooms(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Delete a customer and associated reservations.
@@ -113,7 +112,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean deleteCustomer(int id, int customerID)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a flight.
@@ -121,7 +120,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Number of empty seats
      */
     public int queryFlight(int id, int flightNumber)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a car location.
@@ -129,7 +128,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Number of available cars at this location
      */
     public int queryCars(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a room location.
@@ -137,7 +136,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Number of available rooms at this location
      */
     public int queryRooms(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the customer reservations.
@@ -145,7 +144,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return A formatted bill for the customer
      */
     public String queryCustomerInfo(int id, int customerID)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a flight.
@@ -153,7 +152,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Price of a seat in this flight
      */
     public int queryFlightPrice(int id, int flightNumber)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a car location.
@@ -161,7 +160,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Price of car
      */
     public int queryCarsPrice(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Query the status of a room location.
@@ -169,7 +168,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Price of a room
      */
     public int queryRoomsPrice(int id, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Reserve a seat on this flight.
@@ -177,7 +176,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean reserveFlight(int id, int customerID, int flightNumber)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Reserve a car at this location.
@@ -185,7 +184,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean reserveCar(int id, int customerID, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Reserve a room at this location.
@@ -193,7 +192,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean reserveRoom(int id, int customerID, String location)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Reserve a bundle for the trip.
@@ -201,7 +200,7 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Success
      */
     public boolean bundle(int id, int customerID, Vector<Integer> flightNumbers, String location, boolean car, boolean room)
-	throws RemoteException;
+            throws RemoteException;
 
     /**
      * Convenience for probing the resource manager.
@@ -209,5 +208,5 @@ public interface IResourceManager extends Remote, IProxiable
      * @return Name
      */
     public String getName()
-        throws RemoteException;
+            throws RemoteException;
 }
