@@ -7,23 +7,24 @@ import java.rmi.registry.Registry;
 import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 
-import java.util.*;
-import java.io.*;
-
 public class RMIClient extends Client {
-    private static String s_serverHost = "localhost";
-    private static int s_serverPort = 2005;
+    private static String s_middlewareHostname = "localhost";
+    private static int s_middlewarePort = 2005;
     private static String s_serverName = "MiddlewareServer";
-
-    //TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
     private static String s_rmiPrefix = "group25_";
 
     public static void main(String args[]) {
         if (args.length > 0) {
-            s_serverHost = args[0];
+            s_middlewareHostname = args[0];
         }
         if (args.length > 1) {
-            s_serverName = args[1];
+            try {
+                s_middlewarePort = Integer.parseInt(args[1]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m2nd arg must be integer for middleware port");
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
         if (args.length > 2) {
             System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0mUsage: java client.RMIClient [server_hostname [server_rmiobject]]");
@@ -52,7 +53,7 @@ public class RMIClient extends Client {
     }
 
     public void connectServer() {
-        connectServer(s_serverHost, s_serverPort, s_serverName);
+        connectServer(s_middlewareHostname, s_middlewarePort, s_serverName);
     }
 
     public void connectServer(String server, int port, String name) {

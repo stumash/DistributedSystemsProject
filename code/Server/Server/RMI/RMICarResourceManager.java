@@ -17,28 +17,43 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-// RMIResourceManager is a whole class containing a registry and references to objects
-// These objects can be created through "creators", i.e. addFlight, addCars, addRooms
-// After creation or updates, through creators/setters, the object is written to RNHashMap
-// RNHashMap takes a key and stores the object as the value
-// Read data simply pulls object values from this RNHashMap
-
 public class RMICarResourceManager extends CarResourceManager implements IRemoteResourceManagerGetter {
     private static String s_serverName = "CarServer";
-    //TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
+    private static int s_serverPort = 2001;
     private static String s_rmiPrefix = "group25_";
+    private static String s_customerServerHostname = "localhost";
+    private static int s_customerServerPort = 2003;
 
     public static void main(String args[]) {
         if (args.length > 0) {
-            s_serverName = args[0];
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for carserver port (default 2001)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        if (args.length > 1) {
+            s_customerServerHostname = args[1];
+        }
+        if (args.length > 2) {
+            try {
+                s_customerServerPort = Integer.parseInt(args[2]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
 
         // Create the RMI server entry
         try {
-            // Create a new Server object
+            // Create a new resource manager object
             RMICarResourceManager server = new RMICarResourceManager(s_serverName);
 
-            server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager("localhost", 2003, "CustomerServer");
+            // get a reference to a customerRM
+            server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager(s_customerServerHostname, s_customerServerPort, "CustomerServer");
 
             // Dynamically generate the stub (client proxy)
             ICarResourceManager resourceManager = (ICarResourceManager) UnicastRemoteObject.exportObject(server, 0);
@@ -46,9 +61,9 @@ public class RMICarResourceManager extends CarResourceManager implements IRemote
             // Bind the remote object's stub in the registry
             Registry l_registry;
             try {
-                l_registry = LocateRegistry.createRegistry(2001);
+                l_registry = LocateRegistry.createRegistry(s_serverPort);
             } catch (RemoteException e) {
-                l_registry = LocateRegistry.getRegistry(2001);
+                l_registry = LocateRegistry.getRegistry(s_serverPort);
             }
             final Registry registry = l_registry;
             registry.rebind(s_rmiPrefix + s_serverName, resourceManager);

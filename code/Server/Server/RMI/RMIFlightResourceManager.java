@@ -25,12 +25,32 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class RMIFlightResourceManager extends FlightResourceManager implements IRemoteResourceManagerGetter {
     private static String s_serverName = "FlightServer";
-    //TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
+    private static int s_serverPort = 2000;
     private static String s_rmiPrefix = "group25_";
+    private static String s_customerServerHostname = "localhost";
+    private static int s_customerServerPort = 2003;
 
     public static void main(String args[]) {
         if (args.length > 0) {
-            s_serverName = args[0];
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for flightserver port (default 2000)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        if (args.length > 1) {
+            s_customerServerHostname = args[1];
+        }
+        if (args.length > 2) {
+            try {
+                s_customerServerPort = Integer.parseInt(args[2]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
 
         // Create the RMI server entry
@@ -38,7 +58,7 @@ public class RMIFlightResourceManager extends FlightResourceManager implements I
             // Create a new Server object
             RMIFlightResourceManager server = new RMIFlightResourceManager(s_serverName);
 
-            server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager("localhost", 2003, "CustomerServer");
+            server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
 
             // Dynamically generate the stub (client proxy)
             IFlightResourceManager resourceManager = (IFlightResourceManager) UnicastRemoteObject.exportObject(server, 0);
@@ -46,9 +66,9 @@ public class RMIFlightResourceManager extends FlightResourceManager implements I
             // Bind the remote object's stub in the registry
             Registry l_registry;
             try {
-                l_registry = LocateRegistry.createRegistry(2000);
+                l_registry = LocateRegistry.createRegistry(s_serverPort);
             } catch (RemoteException e) {
-                l_registry = LocateRegistry.getRegistry(2000);
+                l_registry = LocateRegistry.getRegistry(s_serverPort);
             }
             final Registry registry = l_registry;
             registry.rebind(s_rmiPrefix + s_serverName, resourceManager);

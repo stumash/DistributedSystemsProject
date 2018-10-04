@@ -21,12 +21,18 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class RMICustomerResourceManager extends CustomerResourceManager {
     private static String s_serverName = "CustomerServer";
-    //TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
+    private static int s_serverPort = 2003;
     private static String s_rmiPrefix = "group25_";
 
     public static void main(String args[]) {
         if (args.length > 0) {
-            s_serverName = args[0];
+            try {
+                s_serverPort = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for customerserver port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
 
         // Create the RMI server entry
@@ -40,9 +46,9 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
             // Bind the remote object's stub in the registry
             Registry l_registry;
             try {
-                l_registry = LocateRegistry.createRegistry(2003);
+                l_registry = LocateRegistry.createRegistry(s_serverPort);
             } catch (RemoteException e) {
-                l_registry = LocateRegistry.getRegistry(2003);
+                l_registry = LocateRegistry.getRegistry(s_serverPort);
             }
             final Registry registry = l_registry;
             registry.rebind(s_rmiPrefix + s_serverName, resourceManager);

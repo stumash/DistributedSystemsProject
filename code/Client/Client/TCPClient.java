@@ -21,7 +21,13 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
             s_serverHost = args[0];
         }
         if (args.length > 1) {
-            s_serverName = args[1];
+            try {
+                s_serverPort = Integer.parseInt(args[1]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m2nd arg must be integer port for middleware server");
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
         if (args.length > 2) {
             System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0mUsage: java client.TCPClient [server_hostname [server_rmiobject]]");

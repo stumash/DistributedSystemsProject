@@ -44,7 +44,7 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         } else {
             return (Integer) recvMessage.requestedValue;
         }
-        return -1;
+        return -1; // TODO: magic number removal
     }
 
     public boolean reserve(String key, String location, int price) {
