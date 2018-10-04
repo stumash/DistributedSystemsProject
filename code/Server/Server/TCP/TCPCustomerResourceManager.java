@@ -13,7 +13,7 @@ public class TCPCustomerResourceManager extends CustomerResourceManager {
         TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2003);
         TCPCustomerResourceManager customerRM = new TCPCustomerResourceManager(s_serverName);
 
-        server.bind(s_serverName + s_tcpPrefix, customerRM);
+        server.bind(s_tcpPrefix + s_serverName, customerRM);
         server.runServer();
         System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_tcpPrefix + s_serverName + "'");
     }

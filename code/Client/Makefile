@@ -1,4 +1,4 @@
-all: java.policy compile-client compile-client-tcp
+all: java.policy RMIClient TCPClient
 
 java.policy: FORCE
 	@echo "Creating client java policy"
@@ -6,14 +6,16 @@ java.policy: FORCE
 	@echo "permission java.security.AllPermission;" >> java.policy
 	@echo "};" >> java.policy
 
-compile-client: ../Server/RMIInterface.jar ../Server/Trace.jar ../Server/TCP.jar
+jar_deps = ../Server/RMIInterface.jar ../Server/Trace.jar ../Server/TCP.jar
+
+RMIClient: $(jar_deps) Client/RMIClient.java
 	javac -cp ../Server/RMIInterface.jar:../Server/Trace.jar:../Server/TCP.jar Client/*.java
+
+TCPClient: $(jar_deps) Client/TCPClient.java
+	javac -cp ../Server/TCP.jar:../Server/Trace.jar:../Server/RMIInterface.jar:. Client/TCPClient.java
 
 ../Server/RMIInterface.jar: ../Server/Server/Interface/IResourceManager.java
 	make -C ../Server/ RMIInterface.jar
-
-compile-client-tcp: ../Server/TCP.jar ../Server/Trace.jar
-	javac -cp ../Server/TCP.jar:../Server/Trace.jar:../Server/RMIInterface.jar:. Client/TCPClient.java
 
 ../Server/TCP.jar: ../Server/Server/TCP/*.java
 	make -C ../Server/ TCP.jar

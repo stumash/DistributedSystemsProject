@@ -28,11 +28,6 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
             System.exit(1);
         }
 
-        // Set the security policy
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
-
         // Get a reference to the RMIRegister
         try {
             TCPClient client = new TCPClient();
@@ -57,18 +52,22 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
     public AbstractProxyObject getProxyResourceManager(String hostname, int port, String boundName) {
         Message messageToSend = new Message();
         messageToSend.proxyObjectBoundName = s_tcpPrefix + boundName;
+        System.out.println("requesting proxy " + messageToSend.proxyObjectBoundName);
         while (true) {
             try {
                 Socket socket = new Socket(hostname, port);
 
                 ObjectOutputStream osOut = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream osIn  =  new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream  osIn  = new ObjectInputStream(socket.getInputStream());
 
                 osOut.writeObject(messageToSend);
 
                 try {
                     Message messageReceived = (Message) osIn.readObject();
-                    return (AbstractProxyObject) messageReceived.requestedValue;
+                    AbstractProxyObject receivedObject = (AbstractProxyObject) messageReceived.requestedValue;
+                    if (receivedObject == null) throw new Exception("received proxy object was null");
+                    System.out.println("got requested " + messageToSend.proxyObjectBoundName);
+                    return receivedObject;
                 } catch (Exception e) {
                     Trace.info(s_serverName + ": expected customerRM to be AbstractProxyObject. Cast failed.");
                     e.printStackTrace();

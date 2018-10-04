@@ -26,8 +26,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber), new Integer(flightSeats), new Integer(flightPrice)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber, flightSeats, flightPrice};
+        message.methodArgTypes = new Class[]{int.class, int.class, int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -50,12 +50,13 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addCars";
-        message.methodArgs = new Object[]{new Integer(id), location, new Integer(numCars), new Integer(price)};
-        message.methodArgTypes = new Class[]{Integer.class, String.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, location, numCars, price};
+        message.methodArgTypes = new Class[]{int.class, String.class, int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
         } catch (Exception e) {
+            e.printStackTrace();
             Trace.info("ProxyMiddlewareResourceManager::sendAndReceiveMessage() addCars -> failed");
             throw new RemoteException("");
         }
@@ -74,8 +75,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addRooms";
-        message.methodArgs = new Object[]{new Integer(id), location, new Integer(numRooms), new Integer(price)};
-        message.methodArgTypes = new Class[]{Integer.class, String.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, location, numRooms, price};
+        message.methodArgTypes = new Class[]{int.class, String.class, int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -95,8 +96,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "newCustomer";
-        message.methodArgs = new Object[]{new Integer(id)};
-        message.methodArgTypes = new Class[]{Integer.class};
+        message.methodArgs = new Object[]{id};
+        message.methodArgTypes = new Class[]{int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -121,8 +122,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "newCustomer";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, customerID};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -145,8 +146,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -168,8 +169,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteCars";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -191,8 +192,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteRooms";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -212,8 +213,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteCustomer";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, customerID};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -233,8 +234,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -259,8 +260,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryCars";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -285,8 +286,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryRooms";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -311,8 +312,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryCustomerInfo";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, customerID};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -337,8 +338,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryFlightPrice";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -363,8 +364,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryCarsPrice";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -389,8 +390,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryRoomsPrice";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -415,8 +416,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, customerID, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -436,8 +437,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveCar";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), location};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, String.class};
+        message.methodArgs = new Object[]{id, customerID, location};
+        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -457,8 +458,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveRoom";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), location};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, String.class};
+        message.methodArgs = new Object[]{id, customerID, location};
+        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -478,8 +479,8 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "bundle";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), flightNumbers.toString(), location, String.valueOf(car), String.valueOf(room)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, Vector.class, String.class, Boolean.class, Boolean.class};
+        message.methodArgs = new Object[]{id, customerID, flightNumbers, location, car, room};
+        message.methodArgTypes = new Class[]{int.class, int.class, Vector.class, String.class, boolean.class, boolean.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);

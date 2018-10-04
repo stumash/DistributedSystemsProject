@@ -22,8 +22,8 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveCar";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), location};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, String.class};
+        message.methodArgs = new Object[]{id, customerID, location};
+        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -46,8 +46,8 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addCars";
-        message.methodArgs = new Object[]{new Integer(id), location, new Integer(numCars), new Integer(price)};
-        message.methodArgTypes = new Class[]{Integer.class, String.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, location, numCars, price};
+        message.methodArgTypes = new Class[]{int.class, String.class, int.class, int.class};
 
         Message recvMessage = null;
         try {
@@ -71,8 +71,8 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteCars";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -94,8 +94,8 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryCars";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -122,8 +122,8 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryCarsPrice";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {

@@ -14,8 +14,8 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber), new Integer(flightSeats), new Integer(flightPrice)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber, flightSeats, flightPrice};
+        message.methodArgTypes = new Class[]{int.class, int.class, int.class, int.class};
 
         Message recvMessage = null;
         try {
@@ -39,8 +39,8 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
 
         Message recvMessage = null;
         try {
@@ -61,8 +61,8 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
 
         Message recvMessage = null;
         try {
@@ -88,8 +88,8 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryFlightPrice";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class};
 
         Message recvMessage = null;
         try {
@@ -115,8 +115,8 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveFlight";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), new Integer(flightNumber)};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, String.class};
+        message.methodArgs = new Object[]{id, customerID, flightNumber};
+        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
 
         Message recvMessage = null;
         try {

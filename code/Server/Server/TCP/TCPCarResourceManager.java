@@ -6,40 +6,41 @@ import java.io.*;
 import Server.Common.*;
 import Server.Interface.*;
 
-public class TCPCarResourceManager extends CarResourceManager implements IProxyResourceManagerGetter {
+public class TCPCarResourceManager extends CarResourceManager implements IProxyResourceManagerGetter
+{
     private static String s_serverName = "CarServer";
     private static String s_tcpPrefix = "group25_";
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2001);
         TCPCarResourceManager carRM = new TCPCarResourceManager(s_serverName);
         carRM.customerRM = (ICustomerResourceManager) carRM.getProxyResourceManager("localhost", 2003, "CustomerServer");
 
-        server.bind(s_serverName + s_tcpPrefix, carRM);
+        server.bind(s_tcpPrefix + s_serverName, carRM);
         server.runServer();
         System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_tcpPrefix + s_serverName + "'");
     }
 
-    public TCPCarResourceManager(String name) {
-        super(name);
-    }
-
-    public AbstractProxyObject getProxyResourceManager(String hostname, int port, String boundName) {
+    public AbstractProxyObject getProxyResourceManager(String hostname, int port, String boundName)
+    {
         Message messageToSend = new Message();
         messageToSend.proxyObjectBoundName = s_tcpPrefix + boundName;
+        System.out.println("requesting proxy " + messageToSend.proxyObjectBoundName);
         while (true) {
             try {
                 Socket socket = new Socket(hostname, port);
 
-                ObjectOutputStream objectOutputStream =
-                        new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream objectInputStream =
-                        new ObjectInputStream(socket.getInputStream());
+                ObjectOutputStream osOut = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream osIn  =  new ObjectInputStream(socket.getInputStream());
 
-                objectOutputStream.writeObject(messageToSend);
+                osOut.writeObject(messageToSend);
                 try {
-                    Message messageReceived = (Message) objectInputStream.readObject();
-                    return (AbstractProxyObject) messageReceived.requestedValue;
+                    Message messageReceived = (Message) osIn.readObject();
+                    AbstractProxyObject receivedObject = (AbstractProxyObject) messageReceived.requestedValue;
+                    if (receivedObject == null) throw new Exception("received proxy object was null");
+                    System.out.println("got requested " + messageToSend.proxyObjectBoundName);
+                    return receivedObject;
                 } catch (Exception e) {
                     Trace.info(s_serverName + ": expected customerRM to be AbstractProxyObject. Cast failed.");
                 }
@@ -54,4 +55,8 @@ public class TCPCarResourceManager extends CarResourceManager implements IProxyR
         }
     }
 
+    public TCPCarResourceManager(String name)
+    {
+        super(name);
+    }
 }

@@ -14,8 +14,8 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "addRooms";
-        message.methodArgs = new Object[]{new Integer(id), location, new Integer(numRooms), new Integer(price)};
-        message.methodArgTypes = new Class[]{Integer.class, String.class, Integer.class, Integer.class};
+        message.methodArgs = new Object[]{id, location, numRooms, price};
+        message.methodArgTypes = new Class[]{int.class, String.class, int.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -37,8 +37,8 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "deleteRooms";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -59,8 +59,8 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryRooms";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -86,8 +86,8 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "queryRoomsPrice";
-        message.methodArgs = new Object[]{new Integer(id), location};
-        message.methodArgTypes = new Class[]{Integer.class, String.class};
+        message.methodArgs = new Object[]{id, location};
+        message.methodArgTypes = new Class[]{int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -113,8 +113,8 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveRoom";
-        message.methodArgs = new Object[]{new Integer(id), new Integer(customerID), location};
-        message.methodArgTypes = new Class[]{Integer.class, Integer.class, String.class};
+        message.methodArgs = new Object[]{id, customerID, location};
+        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
 
         Message recvMessage = null;
         try {

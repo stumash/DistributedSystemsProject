@@ -15,7 +15,7 @@ public class TCPRoomResourceManager extends RoomResourceManager implements IProx
         TCPRoomResourceManager roomRM = new TCPRoomResourceManager(s_serverName);
         roomRM.customerRM = (ICustomerResourceManager) roomRM.getProxyResourceManager("localhost", 2003, "CustomerServer");
 
-        server.bind(s_serverName + s_tcpPrefix, roomRM);
+        server.bind(s_tcpPrefix + s_serverName, roomRM);
         server.runServer();
         System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_tcpPrefix + s_serverName + "'");
     }
@@ -23,6 +23,7 @@ public class TCPRoomResourceManager extends RoomResourceManager implements IProx
     public AbstractProxyObject getProxyResourceManager(String hostname, int port, String boundName) {
         Message messageToSend = new Message();
         messageToSend.proxyObjectBoundName = s_tcpPrefix + boundName;
+        System.out.println("requesting proxy " + messageToSend.proxyObjectBoundName);
         while (true) {
             try {
                 Socket socket = new Socket(hostname, port);
@@ -33,7 +34,10 @@ public class TCPRoomResourceManager extends RoomResourceManager implements IProx
                 osOut.writeObject(messageToSend);
                 try {
                     Message messageReceived = (Message) osIn.readObject();
-                    return (AbstractProxyObject) messageReceived.requestedValue;
+                    AbstractProxyObject receivedObject = (AbstractProxyObject) messageReceived.requestedValue;
+                    if (receivedObject == null) throw new Exception("received proxy object was null");
+                    System.out.println("got requested " + messageToSend.proxyObjectBoundName);
+                    return receivedObject;
                 } catch (Exception e) {
                     Trace.info(s_serverName + ": expected customerRM to be AbstractProxyObject. Cast failed.");
                     e.printStackTrace();

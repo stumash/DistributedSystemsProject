@@ -15,8 +15,8 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "setID";
-        message.methodArgs = new Object[]{new Integer(id)};
-        message.methodArgTypes = new Class[]{Integer.class};
+        message.methodArgs = new Object[]{id};
+        message.methodArgTypes = new Class[]{int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
@@ -30,8 +30,8 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "getID";
-        // message.methodArgs = new Object[] {new Integer(id), location};
-        // message.methodArgTypes = new Class[] {Integer.class, String.class};
+        // message.methodArgs = new Object[] {id, location};
+        // message.methodArgTypes = new Class[] {int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -85,8 +85,8 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "getBill";
-        // message.methodArgs = new Object[] {new Integer(id), location};
-        // message.methodArgTypes = new Class[] {Integer.class, String.class};
+        // message.methodArgs = new Object[] {id, location};
+        // message.methodArgTypes = new Class[] {int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -106,8 +106,8 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "getBill";
-        // message.methodArgs = new Object[] {new Integer(id), location};
-        // message.methodArgTypes = new Class[] {Integer.class, String.class};
+        // message.methodArgs = new Object[] {id, location};
+        // message.methodArgTypes = new Class[] {int.class, String.class};
 
         Message recvMessage = null;
         try {
@@ -127,8 +127,8 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "getBill";
-        // message.methodArgs = new Object[] {new Integer(id), location};
-        // message.methodArgTypes = new Class[] {Integer.class, String.class};
+        // message.methodArgs = new Object[] {id, location};
+        // message.methodArgTypes = new Class[] {int.class, String.class};
 
         Message recvMessage = null;
         try {
