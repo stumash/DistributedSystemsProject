@@ -122,7 +122,7 @@ public class ProxyCustomerResourceManager extends AbstractProxyObject implements
      *
      * @return the customer
      */
-    public Customer getCustomer(int xid, int customerID) throws RemoteException {
+    public ICustomer getCustomer(int xid, int customerID) throws RemoteException {
         ProxyMethodCallMessage message = new ProxyMethodCallMessage();
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "getCustomer";
@@ -140,7 +140,7 @@ public class ProxyCustomerResourceManager extends AbstractProxyObject implements
             Trace.info("ProxyCustomerResourceManager::getCustomer(" + xid + "," + customerID + ") -> requestedValue is null");
             throw new RemoteException("Oh no!");
         } else {
-            return (Customer) recvMessage.requestedValue;
+            return (ICustomer) recvMessage.requestedValue;
         }
     }
 

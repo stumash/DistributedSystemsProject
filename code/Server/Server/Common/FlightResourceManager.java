@@ -64,7 +64,7 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
     public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException {
         Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called");
         // Read customer object if it exists (and read lock it)
-        Customer customer = null;
+        ICustomer customer = null;
         try {
             customer = customerRM.getCustomer(xid, customerID);
             if (customer == null) {
@@ -86,7 +86,7 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
             return false;
         } else {
             customer.reserve(key, location, item.getPrice());
-            writeData(xid, customer.getKey(), customer);
+            //writeData(xid, customer.getKey(), customer); TODO: why do we need this line
 
             // Decrease the number of available items in the storage
             item.setCount(item.getCount() - 1);

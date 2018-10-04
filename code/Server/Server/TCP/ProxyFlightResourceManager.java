@@ -116,7 +116,7 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserveFlight";
         message.methodArgs = new Object[]{id, customerID, flightNumber};
-        message.methodArgTypes = new Class[]{int.class, int.class, String.class};
+        message.methodArgTypes = new Class[]{int.class, int.class, int.class};
 
         Message recvMessage = null;
         try {

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-#!/bin/bash
 
 echo 'Usage: ./run_rmi_servers.sh middle{hostname,port}, flight{hostname,port}, car{hostname,port}, customer{hostname,port}'
 echo 'middlewareHostname="$1"'
@@ -25,6 +24,11 @@ roomPort="$8"
 customerHostname="$9"
 customerPort="${10}"
 
+if [ -z "${10}" ]
+then
+  echo NEEDS 10 ARGS!!!!
+fi
+
 tmux new-session \; \
     split-window -v \; \
     split-window -h \; \
@@ -34,15 +38,15 @@ tmux new-session \; \
     select-pane -t 0 \; \
     split-window -h \; \
     select-pane -t 5 \; \
-    send-keys "ssh -t ${customerHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh ${customerPort} Customer\"" C-m \; \
+    send-keys "ssh -t ${customerHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Customer ${customerHostname} ${customerPort} \"" C-m \; \
     select-pane -t 4 \; \
-    send-keys "ssh -t ${flightHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh ${flightPort} Flight ${customerHostname} ${customerPort} \" " C-m \; \
+    send-keys "ssh -t ${flightHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Flight ${flightHostname} ${flightPort} ${customerHostname} ${customerPort} \" " C-m \; \
     select-pane -t 3 \; \
-    send-keys "ssh -t ${carHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh ${carPort} Car ${customerHostname} ${customerPort} \" " C-m \; \
+    send-keys "ssh -t ${carHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Car ${carHostname} ${carPort} ${customerHostname} ${customerPort} \" " C-m \; \
     select-pane -t 2 \; \
-    send-keys "ssh -t ${roomHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh ${roomPort} Room ${customerHostname} ${customerPort} \" " C-m \; \
+    send-keys "ssh -t ${roomHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Room ${roomHostname} ${roomPort} ${customerHostname} ${customerPort} \" " C-m \; \
     select-pane -t 1 \; \
-    send-keys "ssh -t ${middlewareHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; sleep .5s; ./run_tcp_middleware.sh ${middlewarePort} ${customerHostname} ${customerPort} ${flightHostname} ${flightPort} ${roomHostname} ${roomPort} ${carHostname} ${carPort} \" " C-m \;
+    send-keys "ssh -t ${middlewareHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; sleep .5s; ./run_tcp_middleware.sh ${middlewareHostname} ${middlewarePort} ${customerHostname} ${customerPort} ${flightHostname} ${flightPort} ${roomHostname} ${roomPort} ${carHostname} ${carPort} \" " C-m \;
 
 #------------------------------------------
 # Just the localhost version

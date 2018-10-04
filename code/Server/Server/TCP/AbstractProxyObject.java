@@ -28,9 +28,8 @@ public abstract class AbstractProxyObject implements Serializable
             throws UnknownHostException, IOException, ClassNotFoundException
     {
         messageToSend.proxyObjectBoundName = boundName;
-
+        System.out.println("Socket ateempting to create on hostname and port: " + hostname + ", " + port);
         Socket socket = new Socket(hostname, port);
-
         ObjectOutputStream objectOutput =
                 new ObjectOutputStream(socket.getOutputStream());
         ObjectInputStream objectInput =

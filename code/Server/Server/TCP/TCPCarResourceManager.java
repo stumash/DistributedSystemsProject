@@ -10,6 +10,7 @@ public class TCPCarResourceManager extends CarResourceManager implements IProxyR
 {
     private static String s_serverName = "CarServer";
     private static int s_serverPort = 2001;
+    private static String s_serverHost = "localhost";
     private static String s_tcpPrefix = "group25_";
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
@@ -17,20 +18,23 @@ public class TCPCarResourceManager extends CarResourceManager implements IProxyR
     public static void main(String[] args)
     {
         if (args.length > 0) {
-            try {
-                s_serverPort = Integer.parseInt(args[0]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for carserver port (default 2001)");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-        if (args.length > 1) {
-            s_customerServerHostname = args[1];
+          s_serverHost = args[0];
+
+        } if (args.length > 1) {
+          try {
+              s_serverPort = Integer.parseInt(args[1]);
+          } catch (Exception e) {
+              System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for carserver port (default 2001)");
+              e.printStackTrace();
+              System.exit(1);
+          }
         }
         if (args.length > 2) {
+            s_customerServerHostname = args[2];
+        }
+        if (args.length > 3) {
             try {
-                s_customerServerPort = Integer.parseInt(args[2]);
+                s_customerServerPort = Integer.parseInt(args[3]);
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
                 e.printStackTrace();
@@ -38,7 +42,7 @@ public class TCPCarResourceManager extends CarResourceManager implements IProxyR
             }
         }
 
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", s_serverPort);
+        TCPProxyObjectServer server = new TCPProxyObjectServer(s_serverHost, s_serverPort);
         TCPCarResourceManager carRM = new TCPCarResourceManager(s_serverName);
         carRM.customerRM = (ICustomerResourceManager) carRM.getProxyResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
 

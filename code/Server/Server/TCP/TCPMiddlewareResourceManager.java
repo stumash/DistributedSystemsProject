@@ -9,6 +9,7 @@ import Server.Interface.*;
 public class TCPMiddlewareResourceManager extends MiddlewareResourceManager implements IProxyResourceManagerGetter {
     private static String s_serverName = "MiddlewareServer";
     private static int s_serverPort = 2005;
+    private static String s_serverHost = "localhost";
     private static String s_tcpPrefix = "group25_";
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
@@ -21,56 +22,59 @@ public class TCPMiddlewareResourceManager extends MiddlewareResourceManager impl
 
     public static void main(String[] args) {
         if (args.length > 0) {
-            try {
-                s_serverPort = Integer.parseInt(args[0]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for middlewareserver port (default 2005)");
-                e.printStackTrace();
-                System.exit(1);
-            }
+          s_serverHost = args[0];
         }
         if (args.length > 1) {
-            s_customerServerHostname = args[1];
+          try {
+              s_serverPort = Integer.parseInt(args[1]);
+          } catch (Exception e) {
+              System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for middlewareserver port (default 2005)");
+              e.printStackTrace();
+              System.exit(1);
+          }
         }
         if (args.length > 2) {
+            s_customerServerHostname = args[2];
+        }
+        if (args.length > 3) {
             try {
-                s_customerServerPort = Integer.parseInt(args[2]);
+                s_customerServerPort = Integer.parseInt(args[3]);
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customerserver port (default 2003)");
                 e.printStackTrace();
                 System.exit(1);
             }
         }
-        if (args.length > 3) {
-            s_flightServerHostname = args[3];
-        }
         if (args.length > 4) {
+            s_flightServerHostname = args[4];
+        }
+        if (args.length > 5) {
             try {
-                s_flightServerPort = Integer.parseInt(args[4]);
+                s_flightServerPort = Integer.parseInt(args[5]);
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m5th arg must be integer for flightserver port (default 2000)");
                 e.printStackTrace();
                 System.exit(1);
             }
         }
-        if (args.length > 5) {
-            s_roomServerHostname = args[5];
-        }
         if (args.length > 6) {
+            s_roomServerHostname = args[6];
+        }
+        if (args.length > 7) {
             try {
-                s_roomServerPort = Integer.parseInt(args[6]);
+                s_roomServerPort = Integer.parseInt(args[7]);
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m7th arg must be integer for roomserver port (default 2002)");
                 e.printStackTrace();
                 System.exit(1);
             }
         }
-        if (args.length > 7) {
-            s_carServerHostname = args[7];
-        }
         if (args.length > 8) {
+            s_carServerHostname = args[8];
+        }
+        if (args.length > 9) {
             try {
-                s_carServerPort = Integer.parseInt(args[8]);
+                s_carServerPort = Integer.parseInt(args[9]);
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m9th arg must be integer for carserver port (default 2001)");
                 e.printStackTrace();
@@ -78,7 +82,7 @@ public class TCPMiddlewareResourceManager extends MiddlewareResourceManager impl
             }
         }
 
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", s_serverPort);
+        TCPProxyObjectServer server = new TCPProxyObjectServer(s_serverHost, s_serverPort);
         TCPMiddlewareResourceManager middlewareRM = new TCPMiddlewareResourceManager(s_serverName);
         middlewareRM.flightRM = (IFlightResourceManager) middlewareRM.getProxyResourceManager(s_flightServerHostname,s_flightServerPort, "FlightServer");
         middlewareRM.carRM = (ICarResourceManager) middlewareRM.getProxyResourceManager(s_carServerHostname,s_carServerPort, "CarServer");

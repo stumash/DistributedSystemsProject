@@ -54,6 +54,7 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
         message.methodArgTypes = new Class[]{int.class, String.class, int.class, int.class};
         Message recvMessage = null;
         try {
+            System.out.println("about to send addCars message!!!!!!!");
             recvMessage = sendAndReceiveMessage(message);
         } catch (Exception e) {
             e.printStackTrace();

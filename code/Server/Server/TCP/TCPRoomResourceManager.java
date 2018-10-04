@@ -8,12 +8,41 @@ import Server.Interface.*;
 
 public class TCPRoomResourceManager extends RoomResourceManager implements IProxyResourceManagerGetter {
     private static String s_serverName = "RoomServer";
+    private static int s_serverPort = 2002;
+    private static String s_serverHost = "localhost";
     private static String s_tcpPrefix = "group25_";
+    private static String s_customerServerHostname = "localhost";
+    private static int s_customerServerPort = 2003;
 
-    public static void main(String[] args) {
-        TCPProxyObjectServer server = new TCPProxyObjectServer("localhost", 2002);
+    public static void main(String args[]) {
+        if (args.length > 0) {
+          s_serverHost = args[0];
+        }
+        if (args.length > 1) {
+          try {
+              s_serverPort = Integer.parseInt(args[1]);
+          } catch (Exception e) {
+              System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for roomserver port (default 2002)");
+              e.printStackTrace();
+              System.exit(1);
+          }
+        }
+        if (args.length > 2) {
+            s_customerServerHostname = args[2];
+        }
+        if (args.length > 3) {
+            try {
+                s_customerServerPort = Integer.parseInt(args[3]);
+            } catch (Exception e) {
+                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        TCPProxyObjectServer server = new TCPProxyObjectServer(s_serverHost, s_serverPort);
         TCPRoomResourceManager roomRM = new TCPRoomResourceManager(s_serverName);
-        roomRM.customerRM = (ICustomerResourceManager) roomRM.getProxyResourceManager("localhost", 2003, "CustomerServer");
+        roomRM.customerRM = (ICustomerResourceManager) roomRM.getProxyResourceManager(s_customerServerHostname, s_customerServerPort, "CustomerServer");
 
         server.bind(s_tcpPrefix + s_serverName, roomRM);
         server.runServer();

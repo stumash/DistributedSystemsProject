@@ -60,7 +60,7 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
     public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException {
         Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called");
         // Read customer object if it exists (and read lock it)
-        Customer customer = null;
+        ICustomer customer = null;
         try {
             customer = customerRM.getCustomer(xid, customerID);
             if (customer == null) {
@@ -82,7 +82,7 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
             return false;
         } else {
             customer.reserve(key, location, item.getPrice());
-            writeData(xid, customer.getKey(), customer);
+            //writeData(xid, customer.getKey(), customer); // TODO why is this needed?
 
             // Decrease the number of available items in the storage
             item.setCount(item.getCount() - 1);

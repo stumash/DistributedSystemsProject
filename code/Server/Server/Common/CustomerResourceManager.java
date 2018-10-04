@@ -70,6 +70,7 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
     }
 
     public String queryCustomerInfo(int xid, int customerID) throws RemoteException {
+      System.out.println("INSIDE QUERY CUSTOMER INFO!!!!!!!!!!!!!!!");
         Trace.info("RM::queryCustomerInfo(" + xid + ", " + customerID + ") called");
         Customer customer = (Customer) readData(xid, Customer.getKey(customerID));
         if (customer == null) {

@@ -2,6 +2,7 @@ package Server.Interface;
 
 import Server.Common.Customer;
 import Server.TCP.IProxiable;
+import Server.Interface.ICustomer;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -54,6 +55,6 @@ public interface ICustomerResourceManager extends Remote, IProxiable {
      *
      * @return the customer
      */
-    public Customer getCustomer(int xid, int customerID)
+    public ICustomer getCustomer(int xid, int customerID)
             throws RemoteException;
 }

@@ -52,7 +52,7 @@ public class ProxyCustomer extends AbstractProxyObject implements ICustomer {
         message.proxyObjectBoundName = this.boundName;
         message.methodName = "reserve";
         message.methodArgs = new Object[]{key, location, price};
-        message.methodArgTypes = new Class[]{String.class, String.class, String.class};
+        message.methodArgTypes = new Class[]{String.class, String.class, int.class};
         Message recvMessage = null;
         try {
             recvMessage = sendAndReceiveMessage(message);
