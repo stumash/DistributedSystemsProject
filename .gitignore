@@ -2,9 +2,12 @@
 *.class
 *.jar
 .nfs*
+bin
 java.policy
 
 # ide-generated
 .idea
 *.iml
 *.log
+.classpath
+.project
