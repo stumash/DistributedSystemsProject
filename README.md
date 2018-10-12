@@ -1,5 +1,7 @@
 # COMP 512 Distributed Systems Project, Fall 2018
 
+[codebeat](https://codebeat.co/projects/github-com-stumash-distributedsystemsproject-master/)
+
 ## Project Layout
 
 This repository contains all the instructions/specifications and code for the semester-long project.
