@@ -1,9 +1,10 @@
-# java-generated
+# java/mvn-generated
 *.class
 *.jar
 .nfs*
 bin
 java.policy
+target
 
 # ide-generated
 .idea
