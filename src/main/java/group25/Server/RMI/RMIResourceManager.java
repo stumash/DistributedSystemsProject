@@ -24,7 +24,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class RMIResourceManager extends ResourceManager {
     private static String s_serverName = "Server";
-    //TODO: REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
+    //REPLACE 'ALEX' WITH YOUR GROUP NUMBER TO COMPILE
     private static String s_rmiPrefix = "group25_";
 
     public static void main(String args[]) {
