@@ -6,11 +6,11 @@
 
 This repository contains all the instructions/specifications and code for the semester-long project.
 
-The `instructions` folder contains all the instructions/specifications of the project as provided by the professor, Bettina Kimme. The instructions are split into three 'milestones' as there were three deliverables for this project over the course of the semester.
+The `instructions/` folder contains all the instructions/specifications of the project as provided by the professor, Bettina Kimme. The instructions are split into three 'milestones' as there were three deliverables for this project over the course of the semester.
 
-The `src` folder contains all project code. `src/main/java/` contains all the java code for the project, and `src/scripts/` contains all bash convenience scripts for running the project. Note that the `run.sh` file can be used instead of the using the code in `src/scripts/` directly.
+The `src/` folder contains all the java code.
 
-## How to use it
+The `scripts/` folder contains all scripts for running the code that is generated into the `target/` folder.
 
 ### Milestones and Final Version
 
