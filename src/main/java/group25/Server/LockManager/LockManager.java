@@ -63,8 +63,14 @@ public class LockManager
 						}
 
 						if (bConvert.get(0) == true) {
-							//TODO: Lock conversion 
-							// Trace.info("LM::lock(" + xid + ", " + data + ", " + lockType + ") converted");
+							//TODO: Lock conversion
+							TransactionObject dataObjectToConvert = (DataLockObject)this.lockTable.get(dataLockObject);
+							TransactionObject lockObjectToConvert = (TransactionLockObject)this.lockTable.get(xLockObject);
+							dataObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
+							lockObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
+							this.lockTable.add(dataObjectToConvert);
+							this.lockTable.add(lockObjectToConvert);
+							Trace.info("LM::lock(" + xid + ", " + data + ", " + lockType + ") converted");
 						} else {
 							// Lock request that is not lock conversion
 							this.lockTable.add(xLockObject);
@@ -200,7 +206,6 @@ public class LockManager
 	// appropriately by the caller. If the lock request is a conversion from READ lock to WRITE lock, then bitset 
 	// is set.
 
-	// when called from Lock, it gets an Object of type datalockobject
 	private boolean LockConflict(DataLockObject dataLockObject, BitSet bitset) throws DeadlockException, RedundantLockRequestException
 	{
 		Vector vect = this.lockTable.elements(dataLockObject);
@@ -239,6 +244,8 @@ public class LockManager
 								return true;
 							}
 						}
+						// we can convert (if we don't find a conflict with the rest of the for loop)
+						bitset.set(0);
 					}
 				}
 			} 
