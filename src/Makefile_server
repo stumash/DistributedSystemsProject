@@ -2,7 +2,6 @@ all: java.policy compile-server-rmi compile-server-tcp
 
 .PHONY: compile-server-rmi compile-server-tcp
 
-
 java.policy:
 	@echo "Creating server java policy"
 	@echo "grant codebase \"file:`pwd`/\" {" > java.policy

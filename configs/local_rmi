@@ -1,0 +1,6 @@
+TCP_OR_RMI RMI
+MID_RM localhost 2005
+CAR_RM localhost 2000
+FLIGHT_RM localhost 2001
+ROOM_RM localhost 2002
+CUST_RM localhost 2003
