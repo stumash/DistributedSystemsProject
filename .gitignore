@@ -3,7 +3,6 @@
 *.jar
 .nfs*
 bin
-java.policy
 target
 
 # ide-generated
