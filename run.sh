@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# handle bad user input
+# handle bad user input or help
 #-----------------------------------
 
 if [ -z "${1}" ] || [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
@@ -9,6 +9,7 @@ if [ -z "${1}" ] || [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
     echo "examples:"
     echo "    ./run.sh configs/local_rmi"
     echo "    ./run.sh configs/local_rmi --client"
+    echo "    ./run.sh configs/local_rmi --kill"
     echo ""
     echo "(see configs/exampleConfigFile.txt for configFile format)"
     echo ""
@@ -130,8 +131,17 @@ if [ "${2}" == "--client" ]; then
     exit 0
 fi
 
+# if ${2} == "--kill", kill all running code and exit
+#------------------------------------------------------
+
+if [ "${2}" == "--kill" ]; then
+    # TODO: implement kill logic
+    echo ""
+fi
+
+# else
 # generate code to run remotely via ssh
-#-----------------------------------
+#-----------------------------------------
 
 function run_rmi_server() {
     # ${1}: port to listen for rmiregistry
@@ -162,7 +172,38 @@ function run_rmi_middleware() {
         "java -Djava.security.policy=${RES_DIR}/java.policy group25.Server.RMI.RMIMiddlewareResourceManager ${@}"
 }
 
-# run code in tmux splits
+function run_tcp_server() {
+    # ${1}: type of resource manager ('Car','Flight','Room','Customer')
+    # ${2}: listening hostname
+    # ${3}: listening port
+    # ${4}: customer resource manager hostname
+    # ${5}: customer resource manager port
+    rm_type="${1}"
+    shift
+    echo \
+        "echo -n 'Connected to '; hostname; "\
+        "cd ${BUILD_DIR} > /dev/null; "\
+        "java -Djava.security.policy=${RES_DIR}/java.policy group25.Server.TCP.TCP${rm_type}ResourceManager ${@}"
+}
+
+function run_tcp_middleware() {
+    # ${1}:  middleware hostname
+    # ${2}:  middleware port
+    # ${3}:  customer hostname
+    # ${4}:  customer port
+    # ${5}:  flight hostname
+    # ${6}:  flight port
+    # ${7}:  room hostname
+    # ${8}:  room port
+    # ${9}:  car hostname
+    # ${10}: car port
+    echo \
+        "echo -n 'Connected to '; hostname; "\
+        "cd ${BUILD_DIR} > /dev/null; "\
+        "java -Djava.security.policy=${RES_DIR}/java.policy Server.TCP.TCPMiddlewareResourceManager ${@}"
+}
+
+# run code in tmux splits over ssh
 #-----------------------------------
 
 if [ "${TCP_OR_RMI}" == "RMI" ]; then
@@ -195,13 +236,14 @@ elif [ "${TCP_OR_RMI}" == "TCP" ]; then
         select-pane -t 0 \; \
         split-window -h \; \
         select-pane -t 5 \; \
-        send-keys "ssh -t ${customerHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Customer ${customerHostname} ${customerPort} \"" C-m \; \
+        send-keys "ssh -t ${CUST_RM_HOST} \"$(run_tcp_server Customer ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 4 \; \
-        send-keys "ssh -t ${flightHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Flight ${flightHostname} ${flightPort} ${customerHostname} ${customerPort} \" " C-m \; \
+        send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_tcp_server Flight ${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 3 \; \
-        send-keys "ssh -t ${carHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Car ${carHostname} ${carPort} ${customerHostname} ${customerPort} \" " C-m \; \
+        send-keys "ssh -t ${CAR_RM_HOST} \"$(run_tcp_server Car ${CAR_RM_HOST} ${CAR_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 2 \; \
-        send-keys "ssh -t ${roomHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; ./run_tcp_server.sh Room ${roomHostname} ${roomPort} ${customerHostname} ${customerPort} \" " C-m \; \
+        send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_tcp_server Room ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 1 \; \
-        send-keys "ssh -t ${middlewareHostname} \"cd $(pwd) > /dev/null; echo -n 'Connected to '; hostname; sleep .5s; ./run_tcp_middleware.sh ${middlewareHostname} ${middlewarePort} ${customerHostname} ${customerPort} ${flightHostname} ${flightPort} ${roomHostname} ${roomPort} ${carHostname} ${carPort} \" " C-m \;
+        send-keys "ssh -t ${MID_RM_HOST} \"$(run_tcp_middleware ${MID_RM_HOST} ${MID_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT}"\
+                  "${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CAR_RM_HOST}) ${CAR_RM_PORT}\"" C-m \;
 fi
