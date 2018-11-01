@@ -1,4 +1,4 @@
-package Server.LockManager;
+package group25.Server.LockManager;
 
 import java.util.Date;
 

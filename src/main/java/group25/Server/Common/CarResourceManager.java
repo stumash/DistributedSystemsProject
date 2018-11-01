@@ -3,9 +3,7 @@ package group25.Server.Common;
 import group25.Server.Interface.*;
 import group25.Server.TCP.*;
 
-import java.util.*;
 import java.rmi.RemoteException;
-import java.io.*;
 
 public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager, ICustomerReservationManager {
     // Create a new car location or add cars to an existing location

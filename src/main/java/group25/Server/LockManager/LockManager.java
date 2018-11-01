@@ -1,6 +1,6 @@
-package Server.LockManager;
+package group25.Server.LockManager;
 
-import Server.Common.*;
+import group25.Server.Common.*;
 
 import java.util.BitSet;
 import java.util.Vector;
@@ -64,8 +64,9 @@ public class LockManager
 
 						if (bConvert.get(0) == true) {
 							//TODO: Lock conversion
-							TransactionObject dataObjectToConvert = (DataLockObject)this.lockTable.get(dataLockObject);
-							TransactionObject lockObjectToConvert = (TransactionLockObject)this.lockTable.get(xLockObject);
+							
+							DataLockObject dataObjectToConvert = (DataLockObject)this.lockTable.get(dataLockObject);
+							TransactionLockObject lockObjectToConvert = (TransactionLockObject)this.lockTable.get(xLockObject);
 							dataObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
 							lockObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
 							this.lockTable.add(dataObjectToConvert);
@@ -289,6 +290,7 @@ public class LockManager
 		WaitLockObject waitLockObject = new WaitLockObject(dataLockObject.getXId(), dataLockObject.getDataName(), dataLockObject.getLockType(), thisThread);
 
 		synchronized (this.stampTable) {
+			// get from stamp table all the same transations
 			Vector vect = this.stampTable.elements(timeObject);
 			if (vect.size() == 0)
 			{
@@ -314,6 +316,7 @@ public class LockManager
 
 		// Suspend thread and wait until notified
 		synchronized (this.waitTable) {
+			// if there is not already someone waiting on the data
 			if (!this.waitTable.contains(waitLockObject))
 		       	{
 				// Register this transaction in the waitTable if it is not already there 

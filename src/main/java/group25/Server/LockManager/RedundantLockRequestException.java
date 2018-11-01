@@ -1,4 +1,4 @@
-package Server.LockManager;
+package group25.Server.LockManager;
 
 /* The transaction requested a lock that it already had. */ 
 

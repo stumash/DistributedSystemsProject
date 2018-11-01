@@ -5,7 +5,6 @@ import group25.Server.TCP.*;
 
 import java.util.*;
 import java.rmi.RemoteException;
-import java.io.*;
 
 public abstract class MiddlewareResourceManager implements IResourceManager {
     protected ICarResourceManager carRM;
@@ -24,8 +23,6 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         return flightRM.addFlight(xid, flightNum, flightSeats, flightPrice);
     }
 
-    ;
-
     // Deletes flight
     public boolean deleteFlight(int xid, int flightNum) throws RemoteException {
         return flightRM.deleteFlight(xid, flightNum);
@@ -35,8 +32,6 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
     public int queryFlight(int xid, int flightNum) throws RemoteException {
         return flightRM.queryFlight(xid, flightNum);
     }
-
-    ;
 
     // Returns price of a seat in this flight
     public int queryFlightPrice(int xid, int flightNum) throws RemoteException {
@@ -48,14 +43,10 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         return flightRM.reserveFlight(xid, customerID, flightNum);
     }
 
-    ;
-
     // Adds car reservation to this customer
     public boolean reserveCar(int xid, int customerID, String location) throws RemoteException {
         return carRM.reserveCar(xid, customerID, location);
     }
-
-    ;
 
     // Create a new car location or add cars to an existing location
     // NOTE: if price <= 0 and the location already exists, it maintains its current price

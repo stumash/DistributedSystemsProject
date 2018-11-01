@@ -1,4 +1,4 @@
-package Server.LockManager;
+package group25.Server.LockManager;
 
 /* The transaction is deadlocked. Somebody should abort it. */
 
