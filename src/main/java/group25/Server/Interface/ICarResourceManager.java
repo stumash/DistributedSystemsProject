@@ -13,7 +13,7 @@ public interface ICarResourceManager extends Remote, IProxiable {
      *
      * @return Success
      */
-    public boolean reserveCar(int id, int customerID, String location)
+    public boolean reserveCar(int xid, int customerID, String location)
             throws RemoteException;
 
     /**
@@ -24,7 +24,7 @@ public interface ICarResourceManager extends Remote, IProxiable {
      *
      * @return Success
      */
-    public boolean addCars(int id, String location, int numCars, int price)
+    public boolean addCars(int xid, String location, int numCars, int price)
             throws RemoteException;
 
     /**
@@ -34,7 +34,7 @@ public interface ICarResourceManager extends Remote, IProxiable {
      *
      * @return Success
      */
-    public boolean deleteCars(int id, String location)
+    public boolean deleteCars(int xid, String location)
             throws RemoteException;
 
     /**
@@ -42,7 +42,7 @@ public interface ICarResourceManager extends Remote, IProxiable {
      *
      * @return Number of available cars at this location
      */
-    public int queryCars(int id, String location)
+    public int queryCars(int xid, String location)
             throws RemoteException;
 
 
@@ -51,7 +51,7 @@ public interface ICarResourceManager extends Remote, IProxiable {
      *
      * @return Price of car
      */
-    public int queryCarsPrice(int id, String location)
+    public int queryCarsPrice(int xid, String location)
             throws RemoteException;
 
     /**
