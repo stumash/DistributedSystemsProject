@@ -14,14 +14,16 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
         m_name = p_name;
     }
 
-    ;
+    public synchronized int getNewCustomerId(int xid) {
+        return Integer.parseInt(String.valueOf(xid) +
+                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+                String.valueOf(Math.round(Math.random() * 100 + 1)));
+    }
 
     public int newCustomer(int xid) throws RemoteException {
         Trace.info("RM::newCustomer(" + xid + ") called");
 // Generate a globally unique ID for the new customer
-        int cid = Integer.parseInt(String.valueOf(xid) +
-                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
-                String.valueOf(Math.round(Math.random() * 100 + 1)));
+        int cid = getNewCustomerId(xid);
         Customer customer = new Customer(cid);
         writeData(xid, customer.getKey(), customer);
         Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid);
@@ -70,7 +72,6 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
     }
 
     public String queryCustomerInfo(int xid, int customerID) throws RemoteException {
-      System.out.println("INSIDE QUERY CUSTOMER INFO!!!!!!!!!!!!!!!");
         Trace.info("RM::queryCustomerInfo(" + xid + ", " + customerID + ") called");
         Customer customer = (Customer) readData(xid, Customer.getKey(customerID));
         if (customer == null) {

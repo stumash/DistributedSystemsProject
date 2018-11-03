@@ -57,4 +57,9 @@ public interface ICustomerResourceManager extends Remote, IProxiable {
      */
     public ICustomer getCustomer(int xid, int customerID)
             throws RemoteException;
+
+
+    public int getNewCustomerId(int xid)
+        throws RemoteException;
+
 }

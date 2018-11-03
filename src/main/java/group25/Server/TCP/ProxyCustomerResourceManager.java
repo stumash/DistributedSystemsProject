@@ -147,4 +147,26 @@ public class ProxyCustomerResourceManager extends AbstractProxyObject implements
     public AbstractProxyObject makeProxyObject(String p_hostname, int p_port, String p_boundName) {
         return new ProxyCustomerResourceManager(p_hostname, p_port, p_boundName);
     }
+
+    @Override
+    public int getNewCustomerId(int xid) throws RemoteException {
+        ProxyMethodCallMessage message = new ProxyMethodCallMessage();
+        message.proxyObjectBoundName = this.boundName;
+        message.methodName = "getNewCustomerId";
+        message.methodArgs = new Object[]{xid};
+        message.methodArgTypes = new Class[]{int.class};
+        Message recvMessage = null;
+        try {
+            recvMessage = sendAndReceiveMessage(message);
+        } catch (Exception e) {
+            Trace.info("ProxyCustomerResourceManager::sendAndReceiveMessage() getNewCustomerId -> failed");
+            throw new RemoteException("");
+        }
+        if (recvMessage.requestedValue == null) {
+            Trace.info("ProxyCustomerResourceManager::getNewCustomerId(" + xid + ") -> requestedValue is null");
+            throw new RemoteException("Oh no!");
+        } else {
+            return (Integer) recvMessage.requestedValue;
+        }
+    }
 }
