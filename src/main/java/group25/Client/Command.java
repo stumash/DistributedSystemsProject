@@ -1,6 +1,10 @@
 package group25.Client;
 
 public enum Command {
+    Start("Start a transaction", ""),
+    Commit("Commit a transaction", "<xid>"),
+    Abort("Abort a transaction", "<xid>"),
+    
     Help("List all available commands", "[CommandName]"),
 
     AddFlight("Add a new flight number", "<xid>,<FlightNumber>,<NumberOfSeats>,<PricePerSeat>"),

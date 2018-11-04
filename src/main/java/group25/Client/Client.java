@@ -1,6 +1,7 @@
 package group25.Client;
 
 import group25.Server.Interface.IResourceManager;
+import group25.Server.LockManager.DeadlockException;
 
 import java.util.*;
 import java.io.*;
@@ -47,6 +48,8 @@ public abstract class Client {
                 System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0m" + e.getLocalizedMessage());
             } catch (ConnectException | UnmarshalException e) {
                 System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mConnection to server lost");
+            } catch (DeadlockException e) {
+                System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mDeadlock");
             } catch (Exception e) {
                 System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mUncaught exception");
                 e.printStackTrace();
@@ -54,7 +57,7 @@ public abstract class Client {
         }
     }
 
-    public void execute(Command cmd, Vector<String> arguments) throws RemoteException, NumberFormatException {
+    public void execute(Command cmd, Vector<String> arguments) throws RemoteException, NumberFormatException, DeadlockException {
         switch (cmd) {
             case Help: {
                 if (arguments.size() == 1) {
@@ -64,6 +67,44 @@ public abstract class Client {
                     System.out.println(l_cmd.toString());
                 } else {
                     System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mImproper use of help command. Location \"help\" or \"help,<CommandName>\"");
+                }
+                break;
+            }
+            case Start: {
+                checkArgumentsCount(1, arguments.size());
+
+                System.out.println("Starting a new transaction");
+
+                int xid = m_resourceManager.start();
+
+                System.out.println("New transaction id: " + xid);
+                break;
+            }
+            case Commit: {
+                checkArgumentsCount(2, arguments.size());
+
+                System.out.println("Committing transaction [xid=" + arguments.elementAt(1) + "]");
+
+                int id = toInt(arguments.elementAt(1));
+                
+                if (m_resourceManager.commit(id)) {
+                    System.out.println("Transaction committed");
+                } else {
+                    System.out.println("Transaction could not be committed");
+                }
+                break;
+            }
+            case Abort: {
+                checkArgumentsCount(2, arguments.size());
+
+                System.out.println("Aborting transaction [xid=" + arguments.elementAt(1) + "]");
+
+                int id = toInt(arguments.elementAt(1));
+                
+                if (m_resourceManager.abort(id)) {
+                    System.out.println("Transaction aborted");
+                } else {
+                    System.out.println("Transaction could not be aborted");
                 }
                 break;
             }

@@ -17,21 +17,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
-import javax.sql.rowset.spi.SyncResolver;
+import javax.transaction.InvalidTransactionException;
 
 public class TransactionManager implements Remote
 {
+    private final long TRANSACTION_MAX_AGE_MILIS = 60*1000;
+
     private LockManager lockManager;
     private ICarResourceManager carRM;
     private IFlightResourceManager flightRM;
     private IRoomResourceManager roomRM;
     private ICustomerResourceManager customerRM;
-    private int transactionCounter;
+    private int transactionCounter = 0;
 
     private HashMap<Integer, ArrayList<BeforeImage>> writeRecorder = new HashMap<>();
     // create some data structure that can map XID to RM's it uses, as well as before images. This is how we maintain active transactions
     // keep an array list of these objects
     // on commit, remove this transaction. On abort, keep it. 
+
+    private HashMap<Integer, Long> transactionAges = new HashMap<>();
+    // for each transaction that is currently active, store the most recent time an action was performed as part of the transaction.
+    // this will be useful for 'time-to-live' calculations. when the time associated to the transaction is more than TRANSACTION_MAX_AGE_MILLIS old,
+    // we will abort the transaction from a separate thread.
+
     public TransactionManager(
             ICarResourceManager carRM,
             IFlightResourceManager flightRM,
@@ -43,9 +51,64 @@ public class TransactionManager implements Remote
         this.flightRM = flightRM;
         this.roomRM = roomRM;
         this.customerRM = customerRM;
-        transactionCounter = 0;
+
+        setUpTimeToLiveThread();
     }
 
+    private void setUpTimeToLiveThread() {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    sleep(TRANSACTION_MAX_AGE_MILIS);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                synchronized(transactionAges) {
+                    for (Integer xid : transactionAges.keySet()) {
+                        if (System.currentTimeMillis() - transactionAges.get(xid)  > TRANSACTION_MAX_AGE_MILIS) {
+                            transactionAges.remove(xid);
+                            try {
+                                abort(xid);
+                            } catch (RemoteException e) {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        }.start();
+    }
+
+    private boolean updateTransactionAge(int xid) {
+        synchronized(transactionAges) {
+            if (!transactionAges.containsKey(xid)) {
+                return false;
+            }
+            transactionAges.put(xid, System.currentTimeMillis());
+        }
+        return true;
+    }
+
+    public synchronized int start() throws RemoteException {
+        transactionCounter++;
+        writeRecorder.put(transactionCounter, new ArrayList<BeforeImage>());
+        synchronized(transactionAges) {
+            transactionAges.put(transactionCounter, System.currentTimeMillis());
+        }
+        return transactionCounter;
+    }
+
+    // QUESTION why does this have to throw TransactionAbortedException;
+    public synchronized boolean commit(int xid) throws InvalidTransactionException, RemoteException {
+        synchronized(transactionAges) {
+            if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+        }
+        lockManager.UnlockAll(xid);
+        writeRecorder.remove(xid);
+        return true;
+    }
     /**
      * Abort transaction associated with xid by
      * - unlocking all associated locks
@@ -53,7 +116,10 @@ public class TransactionManager implements Remote
      * 
      * @param xid
      */
-    private void abort(int xid)  {
+    public boolean abort(int xid) throws InvalidTransactionException, RemoteException  {
+        synchronized(transactionAges) {
+            if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+        }
         synchronized(writeRecorder) {
             ArrayList<BeforeImage> beforeImages = writeRecorder.get(xid);
             for (BeforeImage beforeImage : beforeImages) {
@@ -63,6 +129,7 @@ public class TransactionManager implements Remote
         }
         lockManager.UnlockAll(xid);
         Trace.info("TransactionRM::abort("+xid+")");
+        return true;
     }
 
     /**
@@ -85,7 +152,9 @@ public class TransactionManager implements Remote
     }
 
     // before any write, we should create a key that will represent the data we are writing
-    public boolean addFlight(int xid, int flightNum, int flightSeats, int flightPrice) throws RemoteException, DeadlockException {
+    public boolean addFlight(int xid, int flightNum, int flightSeats, int flightPrice)
+            throws RemoteException, DeadlockException, InvalidTransactionException {
+        if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Flight.getKey(flightNum);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -103,7 +172,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, DeadlockException {
+    public boolean addCars(int xid, String location, int numCars, int price)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Car.getKey(location);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -121,7 +192,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, DeadlockException {
+    public boolean addRooms(int xid, String location, int numRooms, int price)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Room.getKey(location);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -139,7 +212,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public int newCustomer(int xid) throws RemoteException, DeadlockException {
+    public int newCustomer(int xid)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         int cid = customerRM.getNewCustomerId(xid);
         String dataKey = Customer.getKey(cid);
         try { 
@@ -160,7 +235,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public boolean newCustomer(int xid, int cid) throws RemoteException, DeadlockException {
+    public boolean newCustomer(int xid, int cid)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Customer.getKey(cid);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -178,7 +255,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean deleteFlight(int xid, int flightNum) throws RemoteException, DeadlockException {
+    public boolean deleteFlight(int xid, int flightNum)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Flight.getKey(flightNum);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -196,7 +275,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean deleteCars(int xid, String location) throws RemoteException, DeadlockException {
+    public boolean deleteCars(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Car.getKey(location);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -214,7 +295,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean deleteRooms(int xid, String location) throws RemoteException, DeadlockException {
+    public boolean deleteRooms(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Room.getKey(location);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -232,7 +315,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean deleteCustomer(int xid, int customerID) throws RemoteException, DeadlockException {
+    public boolean deleteCustomer(int xid, int customerID)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Customer.getKey(customerID);
         try { 
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_WRITE);
@@ -250,7 +335,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public int queryFlight(int xid, int flightNumber) throws RemoteException, DeadlockException {
+    public int queryFlight(int xid, int flightNumber)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Flight.getKey(flightNumber);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -268,7 +355,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public int queryCars(int xid, String location) throws RemoteException, DeadlockException {
+    public int queryCars(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Car.getKey(location);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -286,7 +375,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public int queryRooms(int xid, String location) throws RemoteException, DeadlockException {
+    public int queryRooms(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Room.getKey(location);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -304,7 +395,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public String queryCustomerInfo(int xid, int customerID) throws RemoteException, DeadlockException {
+    public String queryCustomerInfo(int xid, int customerID)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Customer.getKey(customerID);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -322,7 +415,9 @@ public class TransactionManager implements Remote
         return "";
     }
 
-    public int queryFlightPrice(int xid, int flightNumber) throws RemoteException, DeadlockException {
+    public int queryFlightPrice(int xid, int flightNumber)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Flight.getKey(flightNumber);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -339,7 +434,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public int queryCarsPrice(int xid, String location) throws RemoteException, DeadlockException {
+    public int queryCarsPrice(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Car.getKey(location);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -356,7 +453,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public int queryRoomsPrice(int xid, String location) throws RemoteException, DeadlockException {
+    public int queryRoomsPrice(int xid, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKey = Room.getKey(location);
         try {
             boolean gotLock = lockManager.Lock(xid, dataKey, LockType.LOCK_READ);
@@ -373,7 +472,9 @@ public class TransactionManager implements Remote
         return -1;
     }
 
-    public boolean reserveFlight(int xid, int customerID, int flightNumber) throws RemoteException, DeadlockException {
+    public boolean reserveFlight(int xid, int customerID, int flightNumber)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKeyFlight = Flight.getKey(flightNumber);
         String dataKeyCustomer = Customer.getKey(customerID);
         try { 
@@ -395,7 +496,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean reserveCar(int xid, int customerID, String location) throws RemoteException, DeadlockException {
+    public boolean reserveCar(int xid, int customerID, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKeyCar = Car.getKey(location);
         String dataKeyCustomer = Customer.getKey(customerID);
         try { 
@@ -417,7 +520,9 @@ public class TransactionManager implements Remote
         return false;
     }
 
-    public boolean reserveRoom(int xid, int customerID, String location) throws RemoteException, DeadlockException {
+    public boolean reserveRoom(int xid, int customerID, String location)
+			throws RemoteException, DeadlockException, InvalidTransactionException {
+		if (!updateTransactionAge(xid)) throw new InvalidTransactionException();
         String dataKeyRoom = Room.getKey(location);
         String dataKeyCustomer = Customer.getKey(customerID);
         try { 

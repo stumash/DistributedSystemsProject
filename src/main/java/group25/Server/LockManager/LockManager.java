@@ -127,7 +127,7 @@ public class LockManager
 				DataLockObject dataLockObject = new DataLockObject(xLockObject.getXId(), xLockObject.getDataName(), xLockObject.getLockType());
 				this.lockTable.remove(dataLockObject);
 
-				// Check if there are any waiting transactions
+				// QUESTION Check if there are any waiting transactions
 				synchronized(this.waitTable) {
 					// Get all the transactions waiting on this dataLock
 					waitVector = this.waitTable.elements(dataLockObject);
@@ -317,6 +317,7 @@ public class LockManager
 		// Suspend thread and wait until notified
 		synchronized (this.waitTable) {
 			// if there is not already someone waiting on the data
+			// QUESTION this method indicates that there can only be one waitLockObject on a piece of data at a time
 			if (!this.waitTable.contains(waitLockObject))
 		       	{
 				// Register this transaction in the waitTable if it is not already there 

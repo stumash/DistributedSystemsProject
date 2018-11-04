@@ -3,6 +3,8 @@ package group25.Server.TCP;
 import java.rmi.RemoteException;
 import java.util.*;
 
+import javax.transaction.InvalidTransactionException;
+
 import group25.Server.Interface.*;
 import group25.Server.Common.Trace;
 
@@ -504,4 +506,19 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
     public String getName() throws RemoteException {
         return "Y U DO THIS?";
     }
+
+    @Override
+    public int start() {
+        return 0;
+    }
+
+    @Override
+    public boolean commit(int xid) throws InvalidTransactionException {
+        return false;
+    }
+
+    @Override
+    public boolean abort(int xid) throws InvalidTransactionException {
+		return false;
+	}
 }

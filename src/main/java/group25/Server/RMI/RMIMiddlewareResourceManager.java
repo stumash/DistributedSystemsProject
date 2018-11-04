@@ -118,6 +118,8 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
             server.carRM = (ICarResourceManager) server.getRemoteResourceManager(s_carServerHostname,s_carServerPort, "CarServer");
             server.roomRM = (IRoomResourceManager) server.getRemoteResourceManager(s_roomServerHostname,s_roomServerPort, "RoomServer");
             server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
+
+            server.transactionManager = new TransactionManager(server.carRM, server.flightRM, server.roomRM, server.customerRM);
         } catch (Exception e) {
             System.err.println((char) 27 + "[31;1mServer exception: " + (char) 27 + "[0mUncaught exception");
             e.printStackTrace();

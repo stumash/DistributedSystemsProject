@@ -9,6 +9,9 @@ import group25.Server.Interface.*;
 import group25.Server.TCP.*;
 
 import java.util.*;
+
+import javax.transaction.InvalidTransactionException;
+
 import java.rmi.RemoteException;
 import java.io.*;
 
@@ -326,4 +329,19 @@ public class ResourceManager implements IResourceManager {
     public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
         return null;
     }
+
+    @Override
+    public int start() {
+        return 0;
+    }
+
+    @Override
+    public boolean commit(int xid) throws InvalidTransactionException {
+        return false;
+    }
+
+    @Override
+	public boolean abort(int xid) throws InvalidTransactionException {
+		return false;
+	}
 }
