@@ -9,7 +9,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface ICustomerResourceManager extends Remote, IProxiable {
+public interface ICustomerResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
     /**
      * Add customer.
      *

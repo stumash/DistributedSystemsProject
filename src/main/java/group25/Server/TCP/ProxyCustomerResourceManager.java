@@ -169,4 +169,19 @@ public class ProxyCustomerResourceManager extends AbstractProxyObject implements
             return (Integer) recvMessage.requestedValue;
         }
     }
+
+    @Override
+    public RMItem readData(int xid, String key) {
+        return null;
+    }
+
+    @Override
+    public void writeData(int xid, String key, RMItem value) {
+
+    }
+
+    @Override
+    public void removeData(int xid, String key) {
+
+    }
 }

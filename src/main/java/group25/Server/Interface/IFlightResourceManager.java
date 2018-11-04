@@ -7,7 +7,7 @@ import group25.Server.TCP.IProxiable;
 
 import java.util.*;
 
-public interface IFlightResourceManager extends Remote, IProxiable {
+public interface IFlightResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
     /**
      * Add seats to a flight.
      * <p>

@@ -3,6 +3,7 @@ package group25.Server.TCP;
 import java.rmi.RemoteException;
 
 import group25.Server.Interface.*;
+import group25.Server.Common.RMItem;
 import group25.Server.Common.Trace;
 
 public class ProxyRoomResourceManager extends AbstractProxyObject implements IRoomResourceManager {
@@ -138,4 +139,19 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
     public AbstractProxyObject makeProxyObject(String p_hostname, int p_port, String p_boundName) {
         return new ProxyRoomResourceManager(p_hostname, p_port, p_boundName);
     }
+
+    @Override
+    public RMItem readData(int xid, String key) {
+        return null;
+    }
+
+    @Override
+    public void writeData(int xid, String key, RMItem value) {
+
+    }
+
+    @Override
+    public void removeData(int xid, String key) {
+
+	}
 }

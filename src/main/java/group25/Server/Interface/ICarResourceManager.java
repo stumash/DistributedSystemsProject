@@ -7,7 +7,7 @@ import group25.Server.TCP.IProxiable;
 
 import java.util.*;
 
-public interface ICarResourceManager extends Remote, IProxiable {
+public interface ICarResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
     /**
      * Reserve a car at this location.
      *

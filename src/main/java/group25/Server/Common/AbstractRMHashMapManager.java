@@ -9,7 +9,7 @@ import java.io.*;
 public abstract class AbstractRMHashMapManager {
     protected RMHashMap m_data = new RMHashMap();
 
-    protected RMItem readData(int xid, String key) {
+    public RMItem readData(int xid, String key) {
         synchronized (m_data) {
             RMItem item = m_data.get(key);
             if (item != null) {
@@ -20,20 +20,20 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Writes a data item
-    protected void writeData(int xid, String key, RMItem value) {
+    public void writeData(int xid, String key, RMItem value) {
         synchronized (m_data) {
             m_data.put(key, value);
         }
     }
 
     // Remove the item out of storage
-    protected void removeData(int xid, String key) {
+    public void removeData(int xid, String key) {
         synchronized (m_data) {
             m_data.remove(key);
         }
     }
 
-    protected boolean deleteItem(int xid, String key) {
+    public boolean deleteItem(int xid, String key) {
         Trace.info("RM::deleteItem(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         // Check if there is such an item in the storage
@@ -53,7 +53,7 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Query the number of available seats/rooms/cars
-    protected int queryNum(int xid, String key) {
+    public int queryNum(int xid, String key) {
         Trace.info("RM::queryNum(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         int value = 0;
@@ -65,7 +65,7 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Query the price of an item
-    protected int queryPrice(int xid, String key) {
+    public int queryPrice(int xid, String key) {
         Trace.info("RM::queryPrice(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         int value = 0;

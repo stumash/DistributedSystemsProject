@@ -7,7 +7,7 @@ import group25.Server.TCP.IProxiable;
 
 import java.util.*;
 
-public interface IRoomResourceManager extends Remote, IProxiable {
+public interface IRoomResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
     /**
      * Add room at a location.
      * <p>

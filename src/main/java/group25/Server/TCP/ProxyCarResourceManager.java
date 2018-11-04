@@ -5,6 +5,7 @@ import java.io.*;
 import java.util.*;
 
 import group25.Server.Interface.*;
+import group25.Server.Common.RMItem;
 import group25.Server.Common.Trace;
 
 public class ProxyCarResourceManager extends AbstractProxyObject implements ICarResourceManager {
@@ -154,4 +155,19 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
     public AbstractProxyObject makeProxyObject(String p_hostname, int p_port, String p_boundName) {
         return new ProxyCarResourceManager(p_hostname, p_port, p_boundName);
     }
+
+    @Override
+    public RMItem readData(int xid, String key) {
+        return null;
+    }
+
+    @Override
+    public void writeData(int xid, String key, RMItem value) {
+
+    }
+
+    @Override
+    public void removeData(int xid, String key) {
+
+	}
 }
