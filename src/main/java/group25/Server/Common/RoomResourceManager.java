@@ -86,7 +86,7 @@ public abstract class RoomResourceManager extends AbstractRMHashMapManager imple
             return false;
         } else {
             customer.reserve(key, location, item.getPrice());
-            ///writeData(xid, customer.getKey(), customer); // TODO: why do we need this line
+            customerRM.writeData(xid, customer.getKey(), (RMItem) customer);
 
             // Decrease the number of available items in the storage
             item.setCount(item.getCount() - 1);

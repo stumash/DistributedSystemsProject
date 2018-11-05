@@ -138,7 +138,9 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         for (int flightNumber : flightNumbers) {
             // try and reserve all flights. at first failure, return false
             boolean flightReserved = transactionManager.reserveFlight(xid, customerID, flightNumber);
-            if (!flightReserved) return false;
+            if (!flightReserved) {
+                return false;
+            }
         }
 
 
@@ -148,7 +150,9 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
             if (!(numCars > 0)) return false; // no cars at this location
 
             boolean carReserved = transactionManager.reserveCar(xid, customerID, location);
-            if (!carReserved) return false;
+            if (!carReserved) {
+                return false;
+            }
         }
 
         if (room) {
@@ -157,7 +161,9 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
             if (!(numRooms > 0)) return false; // no rooms at this location
 
             boolean roomReserved = transactionManager.reserveRoom(xid, customerID, location);
-            if (!roomReserved) return false;
+            if (!roomReserved) {
+                return false;
+            }
         }
 
         return true;

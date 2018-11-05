@@ -60,20 +60,20 @@ public class TransactionManager implements Remote
         new Thread() {
             @Override
             public void run() {
-                try {
-                    sleep(TRANSACTION_MAX_AGE_MILIS);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                synchronized(transactionAges) {
-                    for (Integer xid : transactionAges.keySet()) {
-                        if (System.currentTimeMillis() - transactionAges.get(xid)  > TRANSACTION_MAX_AGE_MILIS) {
-                            transactionAges.remove(xid);
-                            try {
-                                abort(xid);
-                            } catch (RemoteException e) {
-                                
+                while (true) {
+                    try {
+                        sleep(TRANSACTION_MAX_AGE_MILIS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    synchronized(transactionAges) {
+                        for (Integer xid : transactionAges.keySet()) {
+                            if (System.currentTimeMillis() - transactionAges.get(xid)  > TRANSACTION_MAX_AGE_MILIS) {
+                                try {
+                                    abort(xid);
+                                } catch (RemoteException e) {
+                                    // do nothing
+                                }
                             }
                         }
                     }
@@ -144,8 +144,9 @@ public class TransactionManager implements Remote
     private void setUpBeforeImage(int xid, IAbstractRMHashMapManager rm, String dataKey) throws RemoteException {
         synchronized(writeRecorder) {
             ArrayList<BeforeImage> beforeImagesForXid = writeRecorder.get(xid);
-            ReservableItem rItem = (ReservableItem) rm.readData(xid, dataKey); // this returns a clone
-            BeforeImage beforeImage = new BeforeImage(rm, rItem);
+            RMItem rItem = (RMItem) rm.readData(xid, dataKey); // this returns a clone
+            System.out.println("setUpBeforeImage() [rItem]: "+rItem);
+            BeforeImage beforeImage = new BeforeImage(rm, dataKey, rItem);
             if (beforeImagesForXid.indexOf(beforeImage) == -1) { // not already stored
                 beforeImagesForXid.add(beforeImage);
             }
@@ -225,7 +226,7 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
-                if (newCustomer(xid, cid)) {
+                if (customerRM.newCustomer(xid, cid)) {
                     return cid;
                 }
             }
@@ -247,7 +248,7 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
-                return newCustomer(xid, cid);
+                return customerRM.newCustomer(xid, cid);
             }
         } catch (DeadlockException e) {
             abort(xid);
@@ -266,6 +267,10 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
+                if (flightRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
+                    abort(xid);
+                    return false;
+                }
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKey);
                 return flightRM.deleteFlight(xid, flightNum);
             }
@@ -286,6 +291,10 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
+                if (carRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
+                    abort(xid);
+                    return false;
+                }
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) carRM, dataKey);
                 return carRM.deleteCars(xid, location);
             }
@@ -306,6 +315,10 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
+                if (roomRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
+                    abort(xid);
+                    return false;
+                }
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) roomRM, dataKey);
                 return roomRM.deleteRooms(xid, location);
             }
@@ -326,6 +339,10 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
+                if (customerRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
+                    abort(xid);
+                    return false;
+                }
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
                 return customerRM.deleteCustomer(xid, customerID);
             }
@@ -549,18 +566,20 @@ public class TransactionManager implements Remote
 
 class BeforeImage {
     IAbstractRMHashMapManager rm;
-    ReservableItem rItem;
+    String dataKey;
+    RMItem rItem;
 
-    BeforeImage(IAbstractRMHashMapManager rm, ReservableItem rItem) {
+    BeforeImage(IAbstractRMHashMapManager rm, String dataKey, RMItem rItem) {
         this.rm = rm;
+        this.dataKey = dataKey;
         this.rItem = rItem;
     }
 
     void restore(int xid) throws RemoteException {
         if (rItem == null) {
-            rm.removeData(xid, rItem.getKey());
+            rm.removeData(xid, dataKey);
         } else {
-            rm.writeData(xid, rItem.getKey(), rItem);
+            rm.writeData(xid, dataKey, rItem);
         }
     }
 
@@ -570,6 +589,6 @@ class BeforeImage {
             return false;
         }
         BeforeImage bOther = (BeforeImage) other;
-        return bOther.rm == this.rm && bOther.rItem.getKey() == this.rItem.getKey();
+        return bOther.dataKey == this.dataKey;
     }
 }

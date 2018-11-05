@@ -64,13 +64,12 @@ public class LockManager
 
 						if (bConvert.get(0) == true) {
 							//TODO: Lock conversion
-							
-							DataLockObject dataObjectToConvert = (DataLockObject)this.lockTable.get(dataLockObject);
-							TransactionLockObject lockObjectToConvert = (TransactionLockObject)this.lockTable.get(xLockObject);
-							dataObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
-							lockObjectToConvert.setLockType(TransactionLockObject.LockType.LOCK_WRITE);
-							this.lockTable.add(dataObjectToConvert);
-							this.lockTable.add(lockObjectToConvert);
+							DataLockObject originalDataLockObject = new DataLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ);
+							TransactionLockObject originalTransactionLockObject = new TransactionLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ);
+							this.lockTable.remove(originalDataLockObject);
+							this.lockTable.remove(originalTransactionLockObject);
+							this.lockTable.add(dataLockObject);
+							this.lockTable.add(xLockObject);
 							Trace.info("LM::lock(" + xid + ", " + data + ", " + lockType + ") converted");
 						} else {
 							// Lock request that is not lock conversion

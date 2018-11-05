@@ -80,8 +80,7 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
             return false;
         } else {
             customer.reserve(key, location, item.getPrice());
-            //writeData(xid, customer.getKey(), customer); // TODO why is this needed?
-
+            customerRM.writeData(xid, customer.getKey(), (RMItem) customer);
             // Decrease the number of available items in the storage
             item.setCount(item.getCount() - 1);
             item.setReserved(item.getReserved() + 1);

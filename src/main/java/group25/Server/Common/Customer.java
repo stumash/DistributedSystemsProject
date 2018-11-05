@@ -41,9 +41,7 @@ public class Customer extends RMItem implements ICustomer {
                 // NOTE: latest price overrides existing price
                 reservedItem.setPrice(price);
             }
-            System.out.println("I JUST PUT INTO HASHMAP");
             m_reservations.put(reservedItem.getKey(), reservedItem);
-            System.out.println("BSLD" + m_reservations.keySet().size());
             return true;
         }
     }
@@ -53,11 +51,8 @@ public class Customer extends RMItem implements ICustomer {
     }
 
     public String getBill() {
-        // System.out.println("GEtting bill!!!!!");
         String s = "Bill for customer " + m_ID + "\n";
-        // System.out.println("CUSTOMER KEY SET LENGTH" + m_reservations.keySet());
         for (String key : m_reservations.keySet()) {
-            // System.out.println("INSIDE FOR LOOP");
             ReservedItem item = (ReservedItem) m_reservations.get(key);
             System.out.println("ITEM KEY: " + item.getReservableItemKey());
             s += +item.getCount() + " " + item.getReservableItemKey() + " $" + item.getPrice() + "\n";
