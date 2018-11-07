@@ -9,8 +9,7 @@ if [ -z "${1}" ] || [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
     echo "examples:"
     echo "    ./run.sh configs/local_rmi"
     echo "    ./run.sh configs/local_rmi --client"
-    echo "    ./run.sh configs/local_rmi --kill"
-    echo ""
+   echo ""
     echo "(see configs/exampleConfigFile.txt for configFile format)"
     echo ""
 
@@ -129,14 +128,6 @@ if [ "${2}" == "--client" ]; then
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
     java "${java_secpol_flag}" "group25.Client.${TCP_OR_RMI}Client" "${MID_RM_HOST}" "${MID_RM_PORT}"
     exit 0
-fi
-
-# if ${2} == "--kill", kill all running code and exit
-#------------------------------------------------------
-
-if [ "${2}" == "--kill" ]; then
-    # TODO: implement kill logic
-    echo ""
 fi
 
 # else

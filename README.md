@@ -23,3 +23,7 @@ The final version of the project is the most recent commit to branch `master`.
 `mvn clean install`
 
 Then, `./run.sh <args>`. Use `./run.sh --help` or `./run.sh` with no args for more info.
+
+## Dependencies
+
+- `TMUX`: this system does not explicitly require `tmux`, but the `run.sh` script depends on it. If you wish to run the system without `tmux`, you will have to look inside the `run.sh` script and extract the bash commands needed to run the system.
