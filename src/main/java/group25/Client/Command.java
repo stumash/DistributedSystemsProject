@@ -33,6 +33,7 @@ public enum Command {
 
     Bundle("Book N flight numbers, and optionally a room and/or car at a location", "<xid>,<CustomerID>,<FlightNumber1>...<FlightNumberN>,<Location>,<Car-Y/N>,<Room-Y/N>"),
 
+    Shutdown("Shutdown all servers", ""),
     Quit("Exit the client application", "");
 
     String m_description;

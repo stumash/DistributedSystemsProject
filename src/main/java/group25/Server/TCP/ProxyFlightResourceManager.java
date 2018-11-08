@@ -156,4 +156,9 @@ public class ProxyFlightResourceManager extends AbstractProxyObject implements I
     public void removeData(int xid, String key) {
 
 	}
+
+    @Override
+    public void shutdown() throws RemoteException {
+
+    }
 }

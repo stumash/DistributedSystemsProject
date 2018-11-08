@@ -170,4 +170,9 @@ public class ProxyCarResourceManager extends AbstractProxyObject implements ICar
     public void removeData(int xid, String key) {
 
 	}
+
+    @Override
+    public void shutdown() throws RemoteException {
+
+    }
 }

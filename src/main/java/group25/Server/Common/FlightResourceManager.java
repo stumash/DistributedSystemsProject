@@ -96,7 +96,6 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
             return true;
         }
     }
-
     public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
         return new ProxyFlightResourceManager(hostname, port, boundName);
     }

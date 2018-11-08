@@ -26,6 +26,7 @@ public abstract class Client {
             // Read the next command
             String command = "";
             Vector<String> arguments = new Vector<String>();
+            Command cmd = null;
             try {
                 System.out.print((char) 27 + "[32;1m\n>] " + (char) 27 + "[0m");
                 command = stdin.readLine().trim();
@@ -37,7 +38,7 @@ public abstract class Client {
 
             try {
                 arguments = parse(command);
-                Command cmd = Command.fromString((String) arguments.elementAt(0));
+                cmd = Command.fromString((String) arguments.elementAt(0));
                 try {
                     execute(cmd, arguments);
                 } catch (ConnectException e) {
@@ -47,7 +48,12 @@ public abstract class Client {
             } catch (IllegalArgumentException | ServerException e) {
                 System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0m" + e.getLocalizedMessage());
             } catch (ConnectException | UnmarshalException e) {
-                System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mConnection to server lost");
+                if (cmd != Command.Shutdown) {
+                    System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mConnection to server lost");
+                } else {
+                    System.out.println("Shutting down client");
+                    System.exit(0);
+                }
             } catch (DeadlockException e) {
                 System.err.println((char) 27 + "[31;1mCommand exception: " + (char) 27 + "[0mDeadlock");
             } catch (Exception e) {
@@ -434,6 +440,10 @@ public abstract class Client {
                     System.out.println("Bundle could not be reserved");
                 }
                 break;
+            }
+            case Shutdown: {
+                checkArgumentsCount(1, arguments.size());
+                m_resourceManager.shutdown();
             }
             case Quit:
                 checkArgumentsCount(1, arguments.size());

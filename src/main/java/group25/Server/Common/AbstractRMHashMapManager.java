@@ -75,4 +75,8 @@ public abstract class AbstractRMHashMapManager {
         Trace.info("RM::queryPrice(" + xid + ", " + key + ") returns cost=$" + value);
         return value;
     }
+
+    public void shutdown() {
+        System.exit(0);
+    }
 }

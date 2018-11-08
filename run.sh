@@ -4,12 +4,13 @@
 #-----------------------------------
 
 if [ -z "${1}" ] || [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
-    echo "usage: ./run.sh <configFile> [--client]"
+    echo "usage: ./run.sh <configFile> [--client | --testclient multiclient mintime numclients]"
     echo ""
     echo "examples:"
     echo "    ./run.sh configs/local_rmi"
     echo "    ./run.sh configs/local_rmi --client"
-    echo "    ./run.sh configs/local_rmi --kill"
+    echo "    ./run.sh configs/local_rmi --testclient false"
+    echo "    ./run.sh configs/local_rmi --testclient true 200 5"
     echo ""
     echo "(see configs/exampleConfigFile.txt for configFile format)"
     echo ""
@@ -131,13 +132,36 @@ if [ "${2}" == "--client" ]; then
     exit 0
 fi
 
-# if ${2} == "--kill", kill all running code and exit
-#------------------------------------------------------
+# if ${2} == "--testclient", run client and exit
+#----------------------------------------------
 
-if [ "${2}" == "--kill" ]; then
-    # TODO: implement kill logic
-    echo ""
+if [ "${2}" == "--testclient" ]; then
+    if [[ -z "${3}" || -z "${4}" ]]; then
+        echo "error: if --testclient, then need two more args, boolean <multiclient> and int <mintime>"
+        exit 1
+    fi
+    if [[ "${3}" != "true" && "${3}" != "false" ]]; then
+        echo "error: multiclient must be 'true' or 'false'"
+        exit 1
+    fi
+    if [ "${3}" == "true" ]; then
+        if [[ ! "${4}" =~ ^[0-9]{1,}$ ]]; then
+            echo "error: mintime must be non-negative integer"
+            exit 1
+        fi
+        if [[ ! "${5}" =~ ^[0-9]{1,}$ ]]; then
+            echo "error: numclients must be a positive integer"
+            exit 1
+        fi
+    fi
+
+    cd "${BUILD_DIR}"
+    csv_jar="${THIS_DIR}/commons-csv-1.1.jar"
+    java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
+    java "${java_secpol_flag}" -classpath "${csv_jar}:." "group25.Client.RMITestClient" "${MID_RM_HOST}" "${MID_RM_PORT}" "${3}" "${4}" "${5}"
+    exit 0
 fi
+
 
 # else
 # generate code to run remotely via ssh

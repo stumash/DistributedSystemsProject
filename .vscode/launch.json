@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - RMITestClient",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopOnEntry": false,
+            "mainClass": "group25.Client.RMITestClient",
+            "args": "",
+            "projectName": "DistributedSystemsProject"
+        }
+    ]
+}

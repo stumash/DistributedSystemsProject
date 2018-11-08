@@ -8,6 +8,7 @@ package group25.Server.RMI;
 import group25.Server.Interface.*;
 import group25.Server.Common.*;
 
+import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.util.*;
 
@@ -23,6 +24,7 @@ public class RMICarResourceManager extends CarResourceManager implements IRemote
     private static String s_rmiPrefix = "group25_";
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
+
 
     public static void main(String args[]) {
         if (args.length > 0) {
@@ -91,7 +93,6 @@ public class RMICarResourceManager extends CarResourceManager implements IRemote
             System.setSecurityManager(new SecurityManager());
         }
     }
-
     public Remote getRemoteResourceManager(String hostname, int port, String name) {
         Remote remoteResourceManager = null;
         try {

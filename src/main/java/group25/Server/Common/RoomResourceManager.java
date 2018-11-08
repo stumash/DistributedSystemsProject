@@ -98,6 +98,7 @@ public abstract class RoomResourceManager extends AbstractRMHashMapManager imple
         }
     }
 
+    @Override
     public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
         return new ProxyRoomResourceManager(hostname, port, boundName);
     }

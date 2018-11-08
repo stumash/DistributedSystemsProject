@@ -184,4 +184,9 @@ public class ProxyCustomerResourceManager extends AbstractProxyObject implements
     public void removeData(int xid, String key) {
 
     }
+
+    @Override
+    public void shutdown() throws RemoteException {
+
+    }
 }

@@ -178,4 +178,11 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         return m_name;
     }
 
+    @Override
+    public void shutdown() {
+        transactionManager.shutdownAllResourceManagers();
+        System.out.println("Shutting down middleware server");
+        System.exit(0);
+    }
+
 }
