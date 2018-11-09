@@ -159,7 +159,7 @@ public class RMITestClient {
                             long startTime = System.currentTimeMillis();
                             resourceManager.newCustomer(xid);
                             long endTime = System.currentTimeMillis();
-                            //System.out.print("-");
+                            System.out.print("-");
     
                             // log one line to csv file
                             synchronized(csvPrinter) {
@@ -199,7 +199,7 @@ public class RMITestClient {
                                 }
                                 long endTime = System.currentTimeMillis();
     
-                                // System.out.print("-");
+                                System.out.print("-");
     
                                 // log one line to csv file
                                 synchronized(csvPrinter) {
