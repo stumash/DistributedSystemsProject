@@ -9,7 +9,7 @@ if [ -z "${1}" ] || [ "${1}" == "--help" ] || [ "${1}" == "-h" ]; then
     echo "examples:"
     echo "    ./run.sh configs/local_rmi"
     echo "    ./run.sh configs/local_rmi --client"
-   echo ""
+    echo ""
     echo "(see configs/exampleConfigFile.txt for configFile format)"
     echo ""
 
