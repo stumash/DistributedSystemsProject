@@ -61,4 +61,7 @@ public interface ICarResourceManager extends Remote, IProxiable, IAbstractRMHash
      */
     public String getName()
             throws RemoteException;
+            
+    public void shutdown()
+            throws RemoteException;        
 }

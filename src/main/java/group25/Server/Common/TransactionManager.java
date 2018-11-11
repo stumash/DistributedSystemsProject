@@ -22,6 +22,7 @@ import javax.transaction.InvalidTransactionException;
 
 public class TransactionManager implements Remote
 {
+    // TODO change this back to 60*1000
     private final long TRANSACTION_MAX_AGE_MILIS = 60*1000;
 
     private LockManager lockManager;
@@ -145,7 +146,6 @@ public class TransactionManager implements Remote
         synchronized(writeRecorder) {
             ArrayList<BeforeImage> beforeImagesForXid = writeRecorder.get(xid);
             RMItem rItem = (RMItem) rm.readData(xid, dataKey); // this returns a clone
-            System.out.println("setUpBeforeImage() [rItem]: "+rItem);
             BeforeImage beforeImage = new BeforeImage(rm, dataKey, rItem);
             if (beforeImagesForXid.indexOf(beforeImage) == -1) { // not already stored
                 beforeImagesForXid.add(beforeImage);
@@ -561,6 +561,31 @@ public class TransactionManager implements Remote
             throw new DeadlockException(xid, "TransactionRM::reserveRoom("+xid+","+dataKeyRoom+","+dataKeyCustomer+") - DeadlockException!");
         }
         return false;
+    }
+
+    public boolean shutdownAllResourceManagers(){
+        try {
+            carRM.shutdown();
+        } catch (RemoteException e) {
+            // do nothing
+        }
+        try {
+            flightRM.shutdown();
+        } catch (RemoteException e) {
+            // do nothing
+        }
+        try {
+            roomRM.shutdown();
+        } catch (RemoteException e) {
+            // do nothing
+        }
+        try {
+            customerRM.shutdown();
+
+        } catch (RemoteException e) {
+            // do nothing
+        }
+        return true;
     }
 }
 

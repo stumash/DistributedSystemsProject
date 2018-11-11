@@ -344,4 +344,9 @@ public class ResourceManager implements IResourceManager {
 	public boolean abort(int xid) throws InvalidTransactionException {
 		return false;
 	}
+
+    @Override
+    public void shutdown() throws RemoteException {
+        
+    }
 }

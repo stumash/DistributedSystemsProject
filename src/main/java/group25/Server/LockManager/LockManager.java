@@ -8,6 +8,7 @@ import java.util.Vector;
 public class LockManager
 {
 	private static int TABLE_SIZE = 2039;
+	// TODO change this back to 10000
 	private static int DEADLOCK_TIMEOUT = 10000;
 
 	private static TPHashTable lockTable = new TPHashTable(LockManager.TABLE_SIZE);

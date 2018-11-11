@@ -27,6 +27,7 @@ public abstract class Client {
             // Read the next command
             String command = "";
             Vector<String> arguments = new Vector<String>();
+            Command cmd = null;
             try {
                 command = stdin.readLine().trim();
             } catch (IOException io) {
@@ -37,7 +38,7 @@ public abstract class Client {
 
             try {
                 arguments = parse(command);
-                Command cmd = Command.fromString((String) arguments.elementAt(0));
+                cmd = Command.fromString((String) arguments.elementAt(0));
                 try {
                     execute(cmd, arguments);
                 } catch (ConnectException e) {
@@ -47,7 +48,12 @@ public abstract class Client {
             } catch (IllegalArgumentException | ServerException e) {
                 printCommandException(e.getLocalizedMessage());
             } catch (ConnectException | UnmarshalException e) {
-                printCommandException("Connection to server lost");
+                if (cmd != Command.Shutdown) {
+                    printCommandException("Connection to server lost");
+                } else {
+                    System.out.println("Shutting down client");
+                    System.exit(0);
+                }
             } catch (DeadlockException e) {
                 printCommandException("Deadlock");
             } catch (Exception e) {
@@ -154,6 +160,10 @@ public abstract class Client {
             case Bundle: {
                 bundle(arguments);
                 break;
+            }
+            case Shutdown: {
+                checkArgumentsCount(1, arguments.size());
+                m_resourceManager.shutdown();
             }
             case Quit:
                 checkArgumentsCount(1, arguments.size());
@@ -553,7 +563,11 @@ public abstract class Client {
 
     private static void checkArgumentsCount(Integer expected, Integer actual) throws IllegalArgumentException {
         if (expected != actual) {
-            throw new IllegalArgumentException("Invalid number of arguments. Expected " + (expected - 1) + ", received " + (actual - 1) + ". Location \"help,<CommandName>\" to check usage of this command");
+            throw new IllegalArgumentException(
+                "Invalid number of arguments. Expected " + (expected - 1) +
+                ", received " + (actual - 1) +
+                ". Location \"help,<CommandName>\" to check usage of this command"
+            );
         }
     }
 

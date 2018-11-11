@@ -23,7 +23,6 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
     private static String s_serverName = "CustomerServer";
     private static int s_serverPort = 2003;
     private static String s_rmiPrefix = "group25_";
-
     public static void main(String args[]) {
         if (args.length > 0) {
             try {

@@ -96,4 +96,5 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
     public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
         return new ProxyCustomerResourceManager(hostname, port, boundName);
     }
+
 }

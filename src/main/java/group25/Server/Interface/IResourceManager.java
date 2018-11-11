@@ -220,4 +220,8 @@ public interface IResourceManager extends Remote, IProxiable {
 
     public boolean abort(int xid) 
             throws RemoteException, InvalidTransactionException;
+
+    public void shutdown()
+        throws RemoteException;
+
 }

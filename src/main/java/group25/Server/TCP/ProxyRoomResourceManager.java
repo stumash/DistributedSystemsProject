@@ -154,4 +154,9 @@ public class ProxyRoomResourceManager extends AbstractProxyObject implements IRo
     public void removeData(int xid, String key) {
 
 	}
+
+    @Override
+    public void shutdown() throws RemoteException {
+
+    }
 }

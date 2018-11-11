@@ -62,4 +62,7 @@ public interface ICustomerResourceManager extends Remote, IProxiable, IAbstractR
     public int getNewCustomerId(int xid)
         throws RemoteException;
 
+
+    public void shutdown()
+        throws RemoteException;
 }

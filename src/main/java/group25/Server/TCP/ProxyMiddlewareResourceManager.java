@@ -521,4 +521,9 @@ public class ProxyMiddlewareResourceManager extends AbstractProxyObject implemen
     public boolean abort(int xid) throws InvalidTransactionException {
 		return false;
 	}
+
+    @Override
+    public void shutdown() throws RemoteException {
+
+    }
 }

@@ -63,4 +63,7 @@ public interface IFlightResourceManager extends Remote, IProxiable, IAbstractRMH
      */
     public String getName()
             throws RemoteException;
+
+    public void shutdown()
+            throws RemoteException;
 }

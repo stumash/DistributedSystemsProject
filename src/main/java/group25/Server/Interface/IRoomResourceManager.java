@@ -60,4 +60,7 @@ public interface IRoomResourceManager extends Remote, IProxiable, IAbstractRMHas
      */
     public String getName()
             throws RemoteException;
+
+    public void shutdown()
+        throws RemoteException;        
 }
