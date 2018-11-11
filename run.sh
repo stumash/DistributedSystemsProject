@@ -35,6 +35,7 @@ cd "${THIS_DIR}"
 
 SCRIPT_DIR="${THIS_DIR}/scripts"
 
+LIB_DIR="${THIS_DIR}/target/lib"
 BUILD_DIR="${THIS_DIR}/target/classes"
 
 BUILD_CLIENT_DIR="${BUILD_DIR}/group25/Client"
@@ -136,15 +137,21 @@ fi
 #----------------------------------------------
 
 if [ "${2}" == "--testclient" ]; then
-    if [[ -z "${3}" || -z "${4}" ]]; then
-        echo "error: if --testclient, then need two more args, boolean <multiclient> and int <mintime>"
+    if [ -z "${3}" ]; then
+        echo "error: if '--testclient', then need either one more arg 'false', or 3 more args 'true' <mintime> <numclients>"
         exit 1
     fi
+
     if [[ "${3}" != "true" && "${3}" != "false" ]]; then
         echo "error: multiclient must be 'true' or 'false'"
         exit 1
     fi
+
     if [ "${3}" == "true" ]; then
+        if [[ -z "${4}" && -z "${5}" ]]; then
+            echo "error: if '--testclient true', then need two more args <mintime> <numclients>"
+            exit 1
+        fi
         if [[ ! "${4}" =~ ^[0-9]{1,}$ ]]; then
             echo "error: mintime must be non-negative integer"
             exit 1
@@ -155,10 +162,13 @@ if [ "${2}" == "--testclient" ]; then
         fi
     fi
 
+    shift
+    shift
+
     cd "${BUILD_DIR}"
-    csv_jar="${THIS_DIR}/commons-csv-1.1.jar"
+    csv_jar="${LIB_DIR}/commons-csv-1.1.jar"
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
-    java "${java_secpol_flag}" -classpath "${csv_jar}:." "group25.Client.${TCP_OR_RMI}TestClient" "${MID_RM_HOST}" "${MID_RM_PORT}" "${3}" "${4}" "${5}"
+    java "${java_secpol_flag}" -classpath "${csv_jar}:." "group25.Client.${TCP_OR_RMI}TestClient" "${MID_RM_HOST}" "${MID_RM_PORT}" "${@}"
     exit 0
 fi
 
