@@ -164,12 +164,15 @@ public abstract class Client {
             case Shutdown: {
                 checkArgumentsCount(1, arguments.size());
                 m_resourceManager.shutdown();
+                break;
             }
-            case Quit:
+            case Quit: {
                 checkArgumentsCount(1, arguments.size());
 
                 System.out.println("Quitting client");
                 System.exit(0);
+                break;
+            }
         }
     }
 
