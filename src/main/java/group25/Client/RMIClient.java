@@ -1,35 +1,31 @@
 package group25.Client;
 
 import group25.Server.Interface.*;
+import group25.Utils.CliParser;
+import org.apache.commons.cli.*;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 
+import static group25.Utils.AnsiColors.RED;
+
 public class RMIClient extends Client {
+
+    private static final String s_serverName = "MiddlewareServer";
+    private static final String s_rmiPrefix = "group25_";
+
     private static String s_middlewareHostname = "localhost";
     private static int s_middlewarePort = 2005;
-    private static String s_serverName = "MiddlewareServer";
-    private static String s_rmiPrefix = "group25_";
 
     public static void main(String args[]) {
-        if (args.length > 0) {
-            s_middlewareHostname = args[0];
-        }
-        if (args.length > 1) {
-            try {
-                s_middlewarePort = Integer.parseInt(args[1]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m2nd arg must be integer for middleware port");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-        if (args.length > 2) {
-            System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0mUsage: java client.RMIClient [server_hostname [server_rmiobject]]");
-            System.exit(1);
-        }
+        CliParser cliParser = new CliParser(args, new String[]{CliParser.MIDDLEWARE_HOSTNAME,CliParser.MIDDLEWARE_PORT});
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_HOSTNAME))
+            s_middlewareHostname = cliParser.getParsedHostname(CliParser.MIDDLEWARE_HOSTNAME);
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_PORT))
+            s_middlewarePort = cliParser.getParsedPort(CliParser.MIDDLEWARE_PORT);
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_PORT)) System.out.println(RED.colorString("WE DID II!"));
 
         // Set the security policy
         if (System.getSecurityManager() == null) {

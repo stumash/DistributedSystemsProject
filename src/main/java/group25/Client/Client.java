@@ -29,6 +29,7 @@ public abstract class Client {
             Vector<String> arguments = new Vector<String>();
             Command cmd = null;
             try {
+                System.out.print(GREEN.colorString(">>> "));
                 command = stdin.readLine().trim();
             } catch (IOException io) {
                 printCommandException(io.getLocalizedMessage());

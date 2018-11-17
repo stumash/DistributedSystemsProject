@@ -129,7 +129,10 @@ done
 if [ "${2}" == "--client" ]; then
     cd "${BUILD_DIR}"
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
-    java "${java_secpol_flag}" "group25.Client.${TCP_OR_RMI}Client" "${MID_RM_HOST}" "${MID_RM_PORT}"
+    java "${java_secpol_flag}" -classpath "${LIB_DIR}/*:."\
+            "group25.Client.${TCP_OR_RMI}Client"\
+            -mwh "${MID_RM_HOST}"\
+            -mwp "${MID_RM_PORT}"
     exit 0
 fi
 
@@ -166,9 +169,12 @@ if [ "${2}" == "--testclient" ]; then
     shift
 
     cd "${BUILD_DIR}"
-    csv_jar="${LIB_DIR}/commons-csv-1.1.jar"
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
-    java "${java_secpol_flag}" -classpath "${csv_jar}:." "group25.Client.${TCP_OR_RMI}TestClient" "${MID_RM_HOST}" "${MID_RM_PORT}" "${@}"
+    java "${java_secpol_flag}" -classpath "${LIB_DIR}/*:."\
+            "group25.Client.${TCP_OR_RMI}TestClient"\
+            "${MID_RM_HOST}"\
+            "${MID_RM_PORT}"\
+            "${@}"
     exit 0
 fi
 
@@ -185,7 +191,12 @@ function run_rmi_server() {
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
         "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${1} &); "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy group25.Server.RMI.RMI${2}ResourceManager ${1} ${3} ${4}"
+        "java -Djava.security.policy=${RES_DIR}/java.policy "\
+                "-classpath \"${LIB_DIR}/*:.\""\
+                "group25.Server.RMI.RMI${2}ResourceManager "\
+                "${1}"\
+                "${3}"\
+                "${4}"
 }
 
 function run_rmi_middleware() {
@@ -202,7 +213,10 @@ function run_rmi_middleware() {
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
         "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${1} &); "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy group25.Server.RMI.RMIMiddlewareResourceManager ${@}"
+        "java -Djava.security.policy=${RES_DIR}/java.policy"\
+                "-classpath \"${LIB_DIR}/*:.\""\
+                "group25.Server.RMI.RMIMiddlewareResourceManager"\
+                "${@}"
 }
 
 function run_tcp_server() {
@@ -216,7 +230,10 @@ function run_tcp_server() {
     echo \
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy group25.Server.TCP.TCP${rm_type}ResourceManager ${@}"
+        "java -Djava.security.policy=${RES_DIR}/java.policy"\
+                "-classpath \"${LIB_DIR}/*:.\""\
+                "group25.Server.TCP.TCP${rm_type}ResourceManager"\
+                "${@}"
 }
 
 function run_tcp_middleware() {
@@ -233,7 +250,10 @@ function run_tcp_middleware() {
     echo \
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy Server.TCP.TCPMiddlewareResourceManager ${@}"
+        "java -Djava.security.policy=${RES_DIR}/java.policy"\
+                "-classpath \"${LIB_DIR}/*:.\""\
+                "Server.TCP.TCPMiddlewareResourceManager"\
+                "${@}"
 }
 
 # run code in tmux splits over ssh
