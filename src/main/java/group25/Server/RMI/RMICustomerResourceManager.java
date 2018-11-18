@@ -7,6 +7,7 @@ package group25.Server.RMI;
 
 import group25.Server.Interface.*;
 import group25.Server.Common.*;
+import group25.Utils.CliParser;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -20,19 +21,21 @@ import java.rmi.server.UnicastRemoteObject;
 // Read data simply pulls object values from this RNHashMap
 
 public class RMICustomerResourceManager extends CustomerResourceManager {
-    private static String s_serverName = "CustomerServer";
+
+    private static final String s_serverName = "CustomerServer";
     private static int s_serverPort = 2003;
-    private static String s_rmiPrefix = "group25_";
+    private static final String s_rmiPrefix = "group25_";
+
+    public RMICustomerResourceManager(String name) {
+        super(name);
+    }
+
     public static void main(String args[]) {
-        if (args.length > 0) {
-            try {
-                s_serverPort = Integer.parseInt(args[0]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for customerserver port (default 2003)");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
+        CliParser cliParser = new CliParser("RMICustomerResourceManager",args, new String[] {
+                CliParser.CUSTOMER_PORT
+        });
+        if (cliParser.parsedArg(CliParser.CUSTOMER_PORT))
+            s_serverPort = cliParser.getParsedPort(CliParser.CUSTOMER_PORT);
 
         // Create the RMI server entry
         try {
@@ -74,9 +77,5 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
-    }
-
-    public RMICustomerResourceManager(String name) {
-        super(name);
     }
 }

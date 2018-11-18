@@ -7,6 +7,7 @@ package group25.Server.RMI;
 
 import group25.Server.Interface.*;
 import group25.Server.Common.*;
+import group25.Utils.CliParser;
 
 import java.rmi.NotBoundException;
 import java.util.*;
@@ -17,41 +18,29 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-// RMIResourceManager is a whole class containing a registry and references to objects
-// These objects can be created through "creators", i.e. addFlight, addCars, addRooms
-// After creation or updates, through creators/setters, the object is written to RNHashMap
-// RNHashMap takes a key and stores the object as the value
-// Read data simply pulls object values from this RNHashMap
+import static group25.Utils.AnsiColors.BLUE;
 
 public class RMIFlightResourceManager extends FlightResourceManager implements IRemoteResourceManagerGetter {
-    private static String s_serverName = "FlightServer";
+    private static final String s_serverName = "FlightServer";
     private static int s_serverPort = 2000;
-    private static String s_rmiPrefix = "group25_";
+    private static final String s_rmiPrefix = "group25_";
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
 
     public static void main(String args[]) {
-        if (args.length > 0) {
-            try {
-                s_serverPort = Integer.parseInt(args[0]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m1st arg must be integer for flightserver port (default 2000)");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-        if (args.length > 1) {
-            s_customerServerHostname = args[1];
-        }
-        if (args.length > 2) {
-            try {
-                s_customerServerPort = Integer.parseInt(args[2]);
-            } catch (Exception e) {
-                System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0m3rd arg must be integer for customer server port (default 2003)");
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
+        for (String arg : args)
+            System.out.println(BLUE.colorString(arg));
+        CliParser cliParser = new CliParser("RMIFlightResourceManager",args, new String[] {
+                CliParser.FLIGHT_PORT,
+                CliParser.CUSTOMER_HOSTNAME,
+                CliParser.CUSTOMER_PORT
+        });
+        if (cliParser.parsedArg(CliParser.FLIGHT_PORT))
+            s_serverPort = cliParser.getParsedPort(CliParser.FLIGHT_PORT);
+        if (cliParser.parsedArg(CliParser.CUSTOMER_HOSTNAME))
+            s_customerServerHostname = cliParser.getParsedHostname(CliParser.CUSTOMER_HOSTNAME);
+        if (cliParser.parsedArg(CliParser.CUSTOMER_PORT))
+            s_customerServerPort = cliParser.getParsedPort(CliParser.CUSTOMER_PORT);
 
         // Create the RMI server entry
         try {

@@ -183,36 +183,31 @@ fi
 #-----------------------------------------
 
 function run_rmi_server() {
-    # ${1}: port to listen for rmiregistry
-    # ${2}: type of resource manager ('Car','Flight','Room','Customer')
-    # ${3}: customer resource manager hostname
-    # ${4}: customer resource manager port
+    # ${1}: type of resource manager ('Car','Flight','Room','Customer')
+    # ${2}: port to listen for rmiregistry
+    # ${rest}: cli args
+    rm_type="${1}"
+    rmireg_port="${2}"
+    shift 2
     echo \
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
-        "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${1} &); "\
+        "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${rmireg_port} &); "\
         "java -Djava.security.policy=${RES_DIR}/java.policy "\
                 "-classpath \"${LIB_DIR}/*:.\""\
-                "group25.Server.RMI.RMI${2}ResourceManager "\
-                "${1}"\
-                "${3}"\
-                "${4}"
+                "group25.Server.RMI.RMI${rm_type}ResourceManager "\
+                "${@}"
 }
 
 function run_rmi_middleware() {
     # ${1}: port to listen for rmiregistry
-    # ${2}: customer resource manager hostname
-    # ${3}: customer resource manager port
-    # ${4}: flight resource manager hostname
-    # ${5}: flight resource manager port
-    # ${6}: room resource manager hostname
-    # ${7}: room resource manager port
-    # ${8}: car resource manager hostname
-    # ${9}: car resource manager port
+    # ${rest}: cli args
+    rmireg_port="${1}"
+    shift
     echo \
         "echo -n 'Connected to '; hostname; "\
         "cd ${BUILD_DIR} > /dev/null; "\
-        "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${1} &); "\
+        "(rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false ${rmireg_port} &); "\
         "java -Djava.security.policy=${RES_DIR}/java.policy"\
                 "-classpath \"${LIB_DIR}/*:.\""\
                 "group25.Server.RMI.RMIMiddlewareResourceManager"\
@@ -269,16 +264,21 @@ if [ "${TCP_OR_RMI}" == "RMI" ]; then
         select-pane -t 0 \; \
         split-window -h \; \
         select-pane -t 5 \; \
-        send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server ${CUST_RM_PORT} Customer)\"" C-m \; \
+        send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server Customer ${CUST_RM_PORT} "\
+                    "-cup ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 4 \; \
-        send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server ${FLIGHT_RM_PORT} Flight ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
+        send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server Flight ${FLIGHT_RM_PORT} "\
+                    "-fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 3 \; \
-        send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server ${CAR_RM_PORT} Car ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
+        send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server Car ${CAR_RM_PORT} "\
+                    "-cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 2 \; \
-        send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server ${ROOM_RM_PORT} Room ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
+        send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server Room ${ROOM_RM_PORT} "\
+                    "-rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 1 \; \
-        send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT}"\
-                  "${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CAR_RM_HOST}) ${CAR_RM_PORT}\"" C-m \;
+        send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwp ${MID_RM_PORT} "\
+                    "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
+                    "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;
 elif [ "${TCP_OR_RMI}" == "TCP" ]; then
     tmux new-session \; \
         split-window -v \; \
@@ -297,6 +297,6 @@ elif [ "${TCP_OR_RMI}" == "TCP" ]; then
         select-pane -t 2 \; \
         send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_tcp_server Room ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
         select-pane -t 1 \; \
-        send-keys "ssh -t ${MID_RM_HOST} \"$(run_tcp_middleware ${MID_RM_HOST} ${MID_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT}"\
+        send-keys "ssh -t ${MID_RM_HOST} \"$(run_tcp_middleware ${MID_RM_HOST} ${MID_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT} "\
                   "${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CAR_RM_HOST}) ${CAR_RM_PORT}\"" C-m \;
 fi

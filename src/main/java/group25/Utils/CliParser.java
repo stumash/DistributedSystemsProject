@@ -15,7 +15,7 @@ public class CliParser {
     private static final String PORT_LONG = "port";
     private static final String PORT_DESC = PORT_LONG+" number";
 
-    static enum Arg {
+    enum Arg {
 
         MIDDLEWARE("mw"),
         CAR("c"),
@@ -51,16 +51,18 @@ public class CliParser {
     public static final String CUSTOMER_HOSTNAME = Arg.CUSTOMER.shortName+HOSTNAME_SHORT;
     public static final String CUSTOMER_PORT = Arg.CUSTOMER.shortName+PORT_SHORT;
 
+    private String commandName;
     private Options options;
     private CommandLine parsedCli;
 
-    public CliParser(String[] toParse, String[] optStrings) {
-        options = new Options();
+    public CliParser(String commandName, String[] toParse, String[] optStrings) {
+        this.commandName = commandName;
+        this.options = new Options();
         for (String optString : optStrings)
             options.addOption(optionFrom(optString));
 
         try {
-            parsedCli = new DefaultParser().parse(options, toParse);
+            this.parsedCli = new DefaultParser().parse(options, toParse);
         } catch (ParseException e) {
             printHelpMessageAndErrorAndExit(e);
         }
@@ -73,10 +75,10 @@ public class CliParser {
     public int getParsedPort(String optString) {
         try {
             return Integer.parseInt(parsedCli.getOptionValue(optString));
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             printHelpMessageAndErrorAndExit(e);
         }
-        return -1;
+        return -1; // never runs
     }
 
     public String getParsedHostname(String optString) {
@@ -118,8 +120,8 @@ public class CliParser {
     }
 
     private void printHelpMessageAndErrorAndExit(Exception e) {
-        System.out.println(RED.colorString("Client Exception: ")+e.getMessage()+"\n");
-        new HelpFormatter().printHelp("java RMIClient", options, true);
+        System.out.println(RED.colorString("Parser Exception: ")+e.getMessage()+"\n");
+        new HelpFormatter().printHelp("java "+commandName, options, true);
         System.exit(1);
     }
 }
