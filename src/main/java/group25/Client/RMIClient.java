@@ -3,7 +3,6 @@ package group25.Client;
 import group25.Server.RMI.RMIUtils;
 import group25.Utils.CliParser;
 
-import static group25.Utils.AnsiColors.BLUE;
 import static group25.Utils.AnsiColors.RED;
 
 public class RMIClient extends Client {
