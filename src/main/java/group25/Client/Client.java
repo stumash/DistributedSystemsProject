@@ -1,6 +1,6 @@
 package group25.Client;
 
-import group25.Server.Interface.IResourceManager;
+import group25.Server.Interface.IMiddlewareResourceManager;
 import group25.Server.LockManager.DeadlockException;
 import static group25.Utils.AnsiColors.*;
 
@@ -12,7 +12,7 @@ import java.rmi.ServerException;
 import java.rmi.UnmarshalException;
 
 public abstract class Client {
-    IResourceManager m_resourceManager = null;
+    IMiddlewareResourceManager m_resourceManager = null;
 
     public abstract void connectServer();
 

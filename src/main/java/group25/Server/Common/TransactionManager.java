@@ -1,29 +1,20 @@
 package group25.Server.Common;
 
-import group25.Server.Interface.IResourceManager;
-import group25.Server.Interface.IAbstractRMHashMapManager;
-import group25.Server.Interface.ICarResourceManager;
-import group25.Server.Interface.IFlightResourceManager;
-import group25.Server.Interface.IRoomResourceManager;
-import group25.Server.Interface.ICustomerResourceManager;
+import group25.Server.Interface.*;
 import group25.Server.LockManager.DeadlockException;
 import group25.Server.LockManager.LockManager;
-import group25.Server.LockManager.RedundantLockRequestException;
 import group25.Server.LockManager.TransactionLockObject.LockType;
-import group25.Server.TCP.AbstractProxyObject;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.transaction.InvalidTransactionException;
 
 public class TransactionManager implements Remote
 {
-    // TODO change this back to 60*1000
-    private final long TRANSACTION_MAX_AGE_MILIS = 60*1000;
+    private final long TRANSACTION_MAX_AGE_MILLIS = 60*1000;
 
     private LockManager lockManager;
     private ICarResourceManager carRM;
@@ -63,13 +54,13 @@ public class TransactionManager implements Remote
             public void run() {
                 while (true) {
                     try {
-                        sleep(TRANSACTION_MAX_AGE_MILIS);
+                        sleep(TRANSACTION_MAX_AGE_MILLIS);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                     synchronized(transactionAges) {
                         for (Integer xid : transactionAges.keySet()) {
-                            if (System.currentTimeMillis() - transactionAges.get(xid)  > TRANSACTION_MAX_AGE_MILIS) {
+                            if (System.currentTimeMillis() - transactionAges.get(xid)  > TRANSACTION_MAX_AGE_MILLIS) {
                                 try {
                                     abort(xid);
                                 } catch (RemoteException e) {

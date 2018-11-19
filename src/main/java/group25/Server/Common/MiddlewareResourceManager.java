@@ -10,7 +10,7 @@ import javax.transaction.InvalidTransactionException;
 import java.rmi.RemoteException;
 import group25.Server.LockManager.*;
 
-public abstract class MiddlewareResourceManager implements IResourceManager {
+public abstract class MiddlewareResourceManager implements IMiddlewareResourceManager {
     protected ICarResourceManager carRM;
     protected IFlightResourceManager flightRM;
     protected IRoomResourceManager roomRM;
@@ -134,7 +134,8 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
      *
      * @return Success
      */
-    public boolean bundle(int xid, int customerID, Vector<Integer> flightNumbers, String location, boolean car, boolean room) throws RemoteException, DeadlockException {
+    public boolean bundle(int xid, int customerID, Vector<Integer> flightNumbers, String location, boolean car, boolean room)
+            throws RemoteException, DeadlockException {
         for (int flightNumber : flightNumbers) {
             // try and reserve all flights. at first failure, return false
             boolean flightReserved = transactionManager.reserveFlight(xid, customerID, flightNumber);
@@ -142,7 +143,6 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
                 return false;
             }
         }
-
 
         if (car) {
             // get a reservable car. if none exist, return false. else reserve it
@@ -173,7 +173,6 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         return new ProxyMiddlewareResourceManager(hostname, port, boundName);
     }
 
-
     public String getName() throws RemoteException, DeadlockException {
         return m_name;
     }
@@ -184,5 +183,4 @@ public abstract class MiddlewareResourceManager implements IResourceManager {
         System.out.println("Shutting down middleware server");
         System.exit(0);
     }
-
 }

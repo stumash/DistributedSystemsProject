@@ -1,6 +1,6 @@
 package group25.Client;
 
-import group25.Server.Interface.IResourceManager;
+import group25.Server.Interface.IMiddlewareResourceManager;
 import group25.Server.TCP.IProxyResourceManagerGetter;
 import group25.Server.TCP.Message;
 import group25.Server.TCP.AbstractProxyObject;
@@ -36,7 +36,7 @@ public class TCPClient extends Client implements IProxyResourceManagerGetter {
         // Get a reference to the RMIRegister
         try {
             TCPClient client = new TCPClient();
-            client.m_resourceManager = (IResourceManager) client.getProxyResourceManager(s_serverHost, s_serverPort, s_serverName);
+            client.m_resourceManager = (IMiddlewareResourceManager) client.getProxyResourceManager(s_serverHost, s_serverPort, s_serverName);
             client.start();
         } catch (Exception e) {
             System.err.println((char) 27 + "[31;1mClient exception: " + (char) 27 + "[0mUncaught exception");

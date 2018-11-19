@@ -42,6 +42,5 @@ public class RMIClient extends Client {
 
     public void connectServer() {
         m_resourceManager = RMIUtils.getRMIobject(s_middlewareHostname, s_middlewarePort, s_serverName);
-        System.out.println(BLUE.colorString(m_resourceManager.toString()));
     }
 }

@@ -8,12 +8,11 @@ import java.util.Vector;
 public class LockManager
 {
 	private static int TABLE_SIZE = 2039;
-	// TODO change this back to 10000
-	private static int DEADLOCK_TIMEOUT = 10000;
+	private static long DEADLOCK_TIMEOUT = 10000;
 
-	private static TPHashTable lockTable = new TPHashTable(LockManager.TABLE_SIZE);
-	private static TPHashTable stampTable = new TPHashTable(LockManager.TABLE_SIZE);
-	private static TPHashTable waitTable = new TPHashTable(LockManager.TABLE_SIZE);
+	private final TPHashTable lockTable = new TPHashTable(LockManager.TABLE_SIZE);
+	private final TPHashTable stampTable = new TPHashTable(LockManager.TABLE_SIZE);
+	private final TPHashTable waitTable = new TPHashTable(LockManager.TABLE_SIZE);
 
 	public LockManager()
 	{
@@ -63,8 +62,7 @@ public class LockManager
 							this.waitTable.remove(waitLockObject);
 						}
 
-						if (bConvert.get(0) == true) {
-							//TODO: Lock conversion
+						if (bConvert.get(0)) {
 							DataLockObject originalDataLockObject = new DataLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ);
 							TransactionLockObject originalTransactionLockObject = new TransactionLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ);
 							this.lockTable.remove(originalDataLockObject);
@@ -87,9 +85,6 @@ public class LockManager
 				}
 			}
 		} 
-		catch (DeadlockException deadlock) {
-			throw deadlock;
-		}
 		catch (RedundantLockRequestException redundantlockrequest) {
 			// Ignore redundant lock requests
 			Trace.info("LM::lock(" + xid + ", " + data + ", " + lockType + ") " + redundantlockrequest.getLocalizedMessage());
@@ -229,8 +224,6 @@ public class LockManager
 				}
 				else if (dataLockObject.getLockType() == TransactionLockObject.LockType.LOCK_WRITE)
 				{
-					//TODO: Lock conversion
-
 					// (2) transaction already has a write lock
 					if (l_dataLockObject.getLockType() == TransactionLockObject.LockType.LOCK_WRITE) {
 						throw new RedundantLockRequestException(dataLockObject.getXId(), "redundant WRITE lock request. dataLockObject already has a write lock"); 
@@ -276,7 +269,9 @@ public class LockManager
 
 	private void WaitLock(DataLockObject dataLockObject) throws DeadlockException
 	{
-		Trace.info("LM::waitLock(" + dataLockObject.getXId() + ", " + dataLockObject.getDataName() + ", " + dataLockObject.getLockType() + ") called");
+	    System.out.printf("LM::waitLock(xid=%d, dataName=%s, lockType=%s) called\n",
+                dataLockObject.getXId(), dataLockObject.getDataName(), dataLockObject.getLockType()
+        );
 
 		// Check timestamp or add a new one.
 		//
@@ -344,11 +339,13 @@ public class LockManager
 		}
 	}
 
-
 	// CleanupDeadlock cleans up stampTable and waitTable, and throws DeadlockException
 	private void cleanupDeadlock(TimeObject timeObject, WaitLockObject waitLockObject) throws DeadlockException
 	{
-		Trace.info("LM::deadlock(" + waitLockObject.getXId() + ", " + waitLockObject.getDataName() + ", " + waitLockObject.getLockType() + ") called");
+	    System.out.printf("LM::cleanupDeadlock(%d, %s, %s,) called\n",
+                waitLockObject.getXId(), waitLockObject.getDataName(), waitLockObject.getLockType()
+        );
+
 		synchronized (this.stampTable) {
 			synchronized (this.waitTable) {
 				this.stampTable.remove(timeObject);

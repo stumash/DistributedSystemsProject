@@ -40,6 +40,7 @@ public class CliParser {
         }
     }
 
+    // command-line flags, e.g. mwp, mwh, cp, ch, ...
     public static final String MIDDLEWARE_HOSTNAME = Arg.MIDDLEWARE.shortName+HOSTNAME_SHORT;
     public static final String MIDDLEWARE_PORT = Arg.MIDDLEWARE.shortName+PORT_SHORT;
     public static final String CAR_HOSTNAME = Arg.CAR.shortName+HOSTNAME_SHORT;

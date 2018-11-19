@@ -4,20 +4,13 @@ import group25.Server.Interface.*;
 import group25.Server.Common.*;
 import group25.Utils.CliParser;
 
-import java.rmi.NotBoundException;
-
 import java.rmi.registry.Registry;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
-import java.rmi.Remote;
-import java.rmi.server.UnicastRemoteObject;
-
-import static group25.Utils.AnsiColors.BLUE;
 
 public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
-    private static final String s_serverName = "MiddlewareServer";
+
+    public static final String s_serverName = "MiddlewareServer";
+
     private static int s_serverPort = 2005;
-    private static String s_rmiPrefix = "group25_";
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
     private static String s_flightServerHostname = "localhost";
@@ -26,6 +19,10 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
     private static int s_roomServerPort = 2002;
     private static String s_carServerHostname = "localhost";
     private static int s_carServerPort = 2001;
+
+    public RMIMiddlewareResourceManager(String name) {
+        super(name);
+    }
 
     public static void main(String args[]) {
         CliParser cliParser = new CliParser("RMIMiddlewareResourceManager",args, new String[] {
@@ -58,82 +55,35 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
         if (cliParser.parsedArg(CliParser.CAR_PORT))
             s_carServerPort = cliParser.getParsedPort(CliParser.CAR_PORT);
 
-        // Create the RMI server entry
-        try {
-            // Create a new Server object
-            RMIMiddlewareResourceManager server = new RMIMiddlewareResourceManager(s_serverName);
+        // Create a new Server object
+        RMIMiddlewareResourceManager server = new RMIMiddlewareResourceManager(s_serverName);
 
-            // Dynamically generate the stub (client proxy)
-            IResourceManager resourceManager = (IResourceManager) UnicastRemoteObject.exportObject(server, 0);
+        server.flightRM = RMIUtils.getRMIobject(s_flightServerHostname,s_flightServerPort,"FlightServer");
+        server.carRM = RMIUtils.getRMIobject(s_carServerHostname,s_carServerPort,"CarServer");
+        server.roomRM = RMIUtils.getRMIobject(s_roomServerHostname,s_roomServerPort,"RoomServer");
+        server.customerRM = RMIUtils.getRMIobject(s_customerServerHostname,s_customerServerPort,"CustomerServer");
 
-            // Bind the remote object's stub in the registry
-            Registry l_registry;
-            try {
-                l_registry = LocateRegistry.createRegistry(s_serverPort);
-            } catch (RemoteException e) {
-                l_registry = LocateRegistry.getRegistry(s_serverPort);
-            }
-            final Registry registry = l_registry;
-            registry.rebind(s_rmiPrefix + s_serverName, resourceManager);
+        server.transactionManager = new TransactionManager(server.carRM, server.flightRM, server.roomRM, server.customerRM);
 
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    try {
-                        registry.unbind(s_rmiPrefix + s_serverName);
-                        System.out.println("'" + s_serverName + "' resource manager unbound");
-                    } catch (Exception e) {
-                        System.err.println((char) 27 + "[31;1mServer exception: " + (char) 27 + "[0mUncaught exception");
-                        e.printStackTrace();
-                    }
-                }
-            });
-            System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_rmiPrefix + s_serverName + "'");
+        // Dynamically generate the stub (client proxy)
+        IMiddlewareResourceManager resourceManager = RMIUtils.createRMIproxyObject(server,0);
 
-            server.flightRM = (IFlightResourceManager) server.getRemoteResourceManager(s_flightServerHostname,s_flightServerPort, "FlightServer");
-            server.carRM = (ICarResourceManager) server.getRemoteResourceManager(s_carServerHostname,s_carServerPort, "CarServer");
-            server.roomRM = (IRoomResourceManager) server.getRemoteResourceManager(s_roomServerHostname,s_roomServerPort, "RoomServer");
-            server.customerRM = (ICustomerResourceManager) server.getRemoteResourceManager(s_customerServerHostname,s_customerServerPort, "CustomerServer");
+        // get local registry
+        final Registry registry = RMIUtils.createLocalRMIregistry(s_serverPort);
 
-            server.transactionManager = new TransactionManager(server.carRM, server.flightRM, server.roomRM, server.customerRM);
-        } catch (Exception e) {
-            System.err.println((char) 27 + "[31;1mServer exception: " + (char) 27 + "[0mUncaught exception");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        // Bind the remote object's stub in the registry
+        RMIUtils.bindToRegistry(registry,s_serverName,resourceManager);
+
+        // remove object from registry on shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            RMIUtils.unbindFromRegistry(registry,s_serverName);
+        }));
+
+        System.out.println("'"+s_serverName+"' resource manager server ready and bound to '"+s_serverName+"'");
 
         // Create and install a security manager
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
-    }
-
-    public RMIMiddlewareResourceManager(String name) {
-        super(name);
-    }
-
-    public Remote getRemoteResourceManager(String server, int port, String name) {
-        Remote remoteResourceManager = null;
-        try {
-            boolean first = true;
-            while (true) {
-                try {
-                    Registry registry = LocateRegistry.getRegistry(server, port);
-                    remoteResourceManager = registry.lookup(s_rmiPrefix + name);
-                    System.out.println("Connected to '" + name + "' server [" + server + ":" + port + "/" + s_rmiPrefix + name + "]");
-                    break;
-                } catch (NotBoundException | RemoteException e) {
-                    if (first) {
-                        System.out.println("Waiting for '" + name + "' server [" + server + ":" + port + "/" + s_rmiPrefix + name + "]");
-                        first = false;
-                    }
-                }
-                Thread.sleep(500);
-            }
-        } catch (Exception e) {
-            System.err.println((char) 27 + "[31;1mServer exception: " + (char) 27 + "[0mUncaught exception");
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return remoteResourceManager; // this line only reached if success
     }
 }

@@ -25,7 +25,7 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface IResourceManager extends Remote, IProxiable {
+public interface IMiddlewareResourceManager extends Remote, IProxiable {
     /**
      * Add seats to a flight.
      * <p>

@@ -1,6 +1,6 @@
 package group25.Client;
 
-import group25.Server.Interface.IResourceManager;
+import group25.Server.Interface.IMiddlewareResourceManager;
 import group25.Server.LockManager.DeadlockException;
 
 import org.apache.commons.csv.CSVFormat;
@@ -8,8 +8,6 @@ import org.apache.commons.csv.CSVPrinter;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-
-import javax.transaction.InvalidTransactionException;
 
 import java.rmi.RemoteException;
 import java.io.BufferedWriter;
@@ -90,7 +88,7 @@ public class RMITestClient {
                     .withHeader("methodCall", "startTime", "endTime"));
 
         // get a resource manager (the middleware)
-        IResourceManager resourceManager = connectServer(s_middlewareHostname, s_middlewarePort, s_serverName);
+        IMiddlewareResourceManager resourceManager = connectServer(s_middlewareHostname, s_middlewarePort, s_serverName);
 
         // test the various methods and measure the throughput as a proxy for general system performance
 
@@ -229,13 +227,13 @@ public class RMITestClient {
         
     }
 
-    private static IResourceManager connectServer(String server, int port, String name) {
+    private static IMiddlewareResourceManager connectServer(String server, int port, String name) {
         try {
             boolean first = true;
             while (true) {
                 try {
                     Registry registry = LocateRegistry.getRegistry(server, port);
-                    IResourceManager resourceManager = (IResourceManager) registry.lookup(s_rmiPrefix + name);
+                    IMiddlewareResourceManager resourceManager = (IMiddlewareResourceManager) registry.lookup(s_rmiPrefix + name);
                     System.out.println("Connected to '" + name + "' server [" + server + ":" + port + "/" + s_rmiPrefix + name + "]");
                     return resourceManager;
                 } catch (NotBoundException | RemoteException e) {

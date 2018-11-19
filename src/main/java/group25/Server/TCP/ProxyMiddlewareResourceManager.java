@@ -8,7 +8,7 @@ import javax.transaction.InvalidTransactionException;
 import group25.Server.Interface.*;
 import group25.Server.Common.Trace;
 
-public class ProxyMiddlewareResourceManager extends AbstractProxyObject implements IResourceManager {
+public class ProxyMiddlewareResourceManager extends AbstractProxyObject implements IMiddlewareResourceManager {
 
     public ProxyMiddlewareResourceManager(String hostname, int port, String boundName) {
         super(hostname, port, boundName);
