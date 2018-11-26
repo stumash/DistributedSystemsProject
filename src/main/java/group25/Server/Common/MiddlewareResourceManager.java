@@ -136,32 +136,47 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
      */
     public boolean bundle(int xid, int customerID, Vector<Integer> flightNumbers, String location, boolean car, boolean room)
             throws RemoteException, DeadlockException {
-        for (int flightNumber : flightNumbers) {
-            // try and reserve all flights. at first failure, return false
-            boolean flightReserved = transactionManager.reserveFlight(xid, customerID, flightNumber);
-            if (!flightReserved) {
+        // first check if all the data exists
+        for (int flightNumber: flightNumbers) {
+            int numFlights = transactionManager.queryFlight(xid, flightNumber);
+            if (!(numFlights > 0)) {
                 return false;
             }
         }
 
         if (car) {
-            // get a reservable car. if none exist, return false. else reserve it
             int numCars = transactionManager.queryCars(xid, location);
-            if (!(numCars > 0)) return false; // no cars at this location
+            if (!(numCars > 0)) {
+                return false;
+            }
+        }
+        if (room) {
+            int numRooms = transactionManager.queryRooms(xid, location);
+            if (!(numRooms > 0)) {
+                return false;
+            }
+        }
+        // if all data exists, try to reserve
+        for (int flightNumber : flightNumbers) {
+            boolean flightReserved = transactionManager.reserveFlight(xid, customerID, flightNumber);
+            if (!flightReserved) {
+                transactionManager.abort(xid);
+                return false;
+            }
+        }
 
+        if (car) {
             boolean carReserved = transactionManager.reserveCar(xid, customerID, location);
             if (!carReserved) {
+                transactionManager.abort(xid);
                 return false;
             }
         }
 
         if (room) {
-            // get a reservable room. if none exist, return false. else reserve it
-            int numRooms = transactionManager.queryRooms(xid, location);
-            if (!(numRooms > 0)) return false; // no rooms at this location
-
             boolean roomReserved = transactionManager.reserveRoom(xid, customerID, location);
             if (!roomReserved) {
+                transactionManager.abort(xid);
                 return false;
             }
         }

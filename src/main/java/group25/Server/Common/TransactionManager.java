@@ -136,7 +136,9 @@ public class TransactionManager implements Remote
     private void setUpBeforeImage(int xid, IAbstractRMHashMapManager rm, String dataKey) throws RemoteException {
         synchronized(writeRecorder) {
             ArrayList<BeforeImage> beforeImagesForXid = writeRecorder.get(xid);
+            // flights been deleted, this will return null
             RMItem rItem = (RMItem) rm.readData(xid, dataKey); // this returns a clone
+            // make a new before image. and this won't be stored because the rItem is new!
             BeforeImage beforeImage = new BeforeImage(rm, dataKey, rItem);
             if (beforeImagesForXid.indexOf(beforeImage) == -1) { // not already stored
                 beforeImagesForXid.add(beforeImage);
@@ -605,6 +607,7 @@ class BeforeImage {
             return false;
         }
         BeforeImage bOther = (BeforeImage) other;
-        return bOther.dataKey == this.dataKey;
+        boolean isEqual = bOther.dataKey.equals(this.dataKey);
+        return isEqual;
     }
 }
