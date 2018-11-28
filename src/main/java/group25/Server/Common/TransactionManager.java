@@ -498,7 +498,7 @@ public class TransactionManager implements Remote
             } else {
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKeyFlight);
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
-                return flightRM.reserveFlight(xid, customerID, flightNumber);
+                return flightRM.reserveFlight(xid, customerID, flightNumber);  // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
             abort(xid);
@@ -522,7 +522,7 @@ public class TransactionManager implements Remote
             } else {
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) carRM, dataKeyCar);
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
-                return carRM.reserveCar(xid, customerID, location);
+                return carRM.reserveCar(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
             abort(xid);
@@ -546,7 +546,7 @@ public class TransactionManager implements Remote
             } else {
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKeyRoom);
                 setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
-                return roomRM.reserveRoom(xid, customerID, location);
+                return roomRM.reserveRoom(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
             abort(xid);

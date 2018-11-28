@@ -27,7 +27,7 @@ public class RMHashMap extends HashMap<String, RMItem> {
         System.out.println(toString());
     }
 
-    public Object clone() {
+    public RMHashMap clone() {
         RMHashMap obj = new RMHashMap();
         for (String key : keySet()) {
             obj.put(key, (RMItem) get(key).clone());

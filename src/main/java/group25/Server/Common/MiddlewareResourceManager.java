@@ -136,6 +136,9 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
      */
     public boolean bundle(int xid, int customerID, Vector<Integer> flightNumbers, String location, boolean car, boolean room)
             throws RemoteException, DeadlockException {
+
+        // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
+
         // first check if all the data exists
         for (int flightNumber: flightNumbers) {
             int numFlights = transactionManager.queryFlight(xid, flightNumber);
