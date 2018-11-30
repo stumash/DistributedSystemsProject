@@ -1,7 +1,7 @@
 package group25.Server.Interface;
 
 import group25.Server.Common.Customer;
-import group25.Server.TCP.IProxiable;
+
 import group25.Server.Interface.ICustomer;
 
 import java.rmi.Remote;
@@ -9,7 +9,7 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
-public interface ICustomerResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
+public interface ICustomerResourceManager extends Remote, IAbstractRMHashMapManager {
     /**
      * Add customer.
      *

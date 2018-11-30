@@ -1,7 +1,7 @@
 package group25.Server.Common;
 
 import group25.Server.Interface.*;
-import group25.Server.TCP.*;
+
 
 import java.util.*;
 import java.rmi.RemoteException;
@@ -10,11 +10,10 @@ import java.io.*;
 public abstract class FlightResourceManager extends AbstractRMHashMapManager implements IFlightResourceManager, ICustomerReservationManager {
     // Create a new flight, or add seats to existing flight
     // NOTE: if flightPrice <= 0 and the flight already exists, it maintains its current price
-    private String m_name = "";
     protected ICustomerResourceManager customerRM;
 
-    public FlightResourceManager(String p_name) {
-        m_name = p_name;
+    public FlightResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
+        super(p_name, filename1, filename2, pointerFile);
     }
 
     public boolean addFlight(int xid, int flightNum, int flightSeats, int flightPrice) throws RemoteException {
@@ -57,10 +56,6 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
         return queryPrice(xid, Flight.getKey(flightNum));
     }
 
-    public String getName() throws RemoteException {
-        return m_name;
-    }
-
     public boolean reserveItem(int xid, int customerID, String key, String location) throws RemoteException {
         Trace.info("RM::reserveItem(" + xid + ", customer=" + customerID + ", " + key + ", " + location + ") called");
         // Read customer object if it exists (and read lock it)
@@ -96,7 +91,5 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
             return true;
         }
     }
-    public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
-        return new ProxyFlightResourceManager(hostname, port, boundName);
-    }
+
 }

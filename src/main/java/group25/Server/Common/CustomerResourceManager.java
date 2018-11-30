@@ -1,17 +1,16 @@
 package group25.Server.Common;
 
 import group25.Server.Interface.*;
-import group25.Server.TCP.*;
+
 
 import java.util.*;
 import java.rmi.RemoteException;
 import java.io.*;
 
 public class CustomerResourceManager extends AbstractRMHashMapManager implements ICustomerResourceManager {
-    private String m_name = "";
 
-    public CustomerResourceManager(String p_name) {
-        m_name = p_name;
+    public CustomerResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
+        super(p_name, filename1, filename2, pointerFile);
     }
 
     public synchronized int getNewCustomerId(int xid) {
@@ -84,17 +83,9 @@ public class CustomerResourceManager extends AbstractRMHashMapManager implements
             return customer.getBill();
         }
     }
-
-    public String getName() throws RemoteException {
-        return m_name;
-    }
-
+    
     public Customer getCustomer(int xid, int customerID) throws RemoteException {
         return (Customer) readData(xid, Customer.getKey(customerID));
-    }
-
-    public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
-        return new ProxyCustomerResourceManager(hostname, port, boundName);
     }
 
 }

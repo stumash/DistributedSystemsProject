@@ -8,8 +8,7 @@ package group25.Server.Common;
 import java.util.*;
 
 import group25.Server.Interface.ICustomer;
-import group25.Server.TCP.AbstractProxyObject;
-import group25.Server.TCP.ProxyCustomer;
+
 
 public class Customer extends RMItem implements ICustomer {
     private int m_ID;
@@ -86,9 +85,4 @@ public class Customer extends RMItem implements ICustomer {
         obj.m_reservations = (RMHashMap) m_reservations.clone();
         return obj;
     }
-
-    public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
-        return new ProxyCustomer(hostname, port, boundName);
-    }
-
 }

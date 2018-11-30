@@ -20,7 +20,7 @@ public class RMIFlightResourceManager extends FlightResourceManager {
     private static int s_customerServerPort = 2003;
 
     public RMIFlightResourceManager(String name) {
-        super(name);
+        super(name, "flightData1", "flightData2", "flightMasterRecord");
     }
 
     public static void main(String args[]) {

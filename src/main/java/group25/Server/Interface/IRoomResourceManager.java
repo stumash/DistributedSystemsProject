@@ -3,11 +3,11 @@ package group25.Server.Interface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import group25.Server.TCP.IProxiable;
+
 
 import java.util.*;
 
-public interface IRoomResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
+public interface IRoomResourceManager extends Remote, IAbstractRMHashMapManager {
     /**
      * Add room at a location.
      * <p>

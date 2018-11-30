@@ -8,45 +8,113 @@ import java.rmi.RemoteException;
 import java.io.*;
 
 public abstract class AbstractRMHashMapManager {
-    protected RMHashMap globalState = new RMHashMap();
+    private String m_name = "";
+    protected RMHashMap globalState;
     protected HashMap<Integer, RMHashMap> transactionStates = new HashMap<>();
     protected XMLPersistor xmlPersistor = new XMLPersistor(RMHashMap.class);
+    protected final String filename1, filename2, pointerFile;
+    protected String currentCommitFile;
+    protected FairWaitInterruptibleLock globalLock = new FairWaitInterruptibleLock();
 
+    // TODO: give lock to correct transaction on wakeup from failure
+    public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile) {
+        this.m_name = p_name;
+        this.filename1 = filename1;
+        this.filename2 = filename2;
+        this.pointerFile = pointerFile;
+
+        currentCommitFile = xmlPersistor.readObject(pointerFile);
+        if (currentCommitFile == null) {
+            currentCommitFile = filename1;
+            globalState = new RMHashMap();
+        } else {
+            globalState = xmlPersistor.readObject(currentCommitFile);
+        }
+    }
+
+    public boolean vote(int xid) {
+        if (!transactionExists(xid)) return false;
+
+        // get global lock
+        boolean gotLock = globalLock.lock(xid);
+        if (!gotLock) return false;
+
+        updateThenPersistGlobalState(xid);
+        return true;
+    }
+
+    public boolean doCommit(int xid) {
+        // update pointer file
+        if (currentCommitFile.equals(filename1)) {
+            xmlPersistor.writeObject(filename2, pointerFile);
+            currentCommitFile = filename2;
+        } else {
+            xmlPersistor.writeObject(filename1, pointerFile);
+            currentCommitFile = filename1;
+        }
+
+        // destroy transaction-specific state
+        removeTransactionState(xid);
+
+        // unlock
+        globalLock.unlock(xid);
+
+        return true;
+    }
+
+    public boolean abort(int xid) {
+        if (globalLock.getLockOwner() == xid) {
+            synchronized(globalState) {
+                removeTransactionState(xid);
+                globalState = xmlPersistor.readObject(currentCommitFile);
+                globalLock.unlock(xid);
+            }
+        } else {
+            removeTransactionState(xid);
+            globalLock.interruptWaiter(xid);
+        }
+        
+        return true;
+    }
+
+    // get state for a particular transaction
     public RMHashMap getTransactionState(int xid) {
         synchronized(transactionStates) {
-            if (transactionStates.containsKey(xid)) {
-                return transactionStates.get(xid);
-            }
-            else {
-                synchronized(globalState) {
-                    transactionStates.put(xid, globalState.clone());
-                    return transactionStates.get(xid);
-                }
-            }
+            return transactionStates.get(xid);
         }
     }
 
     public boolean transactionExists(int xid) {
-        return transactionStates.containsKey(xid);
+        synchronized(transactionStates) {
+            return transactionStates.containsKey(xid);
+        }
     }
 
     public void removeTransactionState(int xid) {
-        transactionStates.remove(xid);
+        synchronized(transactionStates) {
+            transactionStates.remove(xid);
+        }
     }
 
-    public void commitGlobalState(int xid, String filename) {
+    public void updateThenPersistGlobalState(int xid) {
         synchronized(globalState) {
             // update global state to contain all changes made to transaction-specific state
-            RMHashMap m_data = transactionStates.get(xid);
+            RMHashMap m_data = getTransactionState(xid);
+            if (m_data == null) return;
+
             for (String i : m_data.keySet()) {
                 globalState.put(i, m_data.get(i));
             }
 
             // remove the transaction-specific state
-            transactionStates.remove(xid);
+            removeTransactionState(xid);
 
             // write to file
-            xmlPersistor.writeObject(globalState, filename);
+            if  (currentCommitFile.equals(filename1)) {
+                xmlPersistor.writeObject(globalState, filename2);
+            } else if  (currentCommitFile.equals(filename2)) {
+                xmlPersistor.writeObject(globalState, filename1);
+            }
         }
     }
 
@@ -64,6 +132,13 @@ public abstract class AbstractRMHashMapManager {
     // Writes a data item
     public void writeData(int xid, String key, RMItem value) {
         RMHashMap m_data = getTransactionState(xid);
+        if (m_data == null) {
+            synchronized(globalState) {
+                synchronized(transactionStates) {
+                    transactionStates.put(xid, globalState.clone());
+                }
+            }
+        }
         synchronized (m_data) {
             m_data.put(key, value);
         }
@@ -120,6 +195,9 @@ public abstract class AbstractRMHashMapManager {
         return value;
     }
 
+    public String getName() throws RemoteException {
+        return m_name;
+    }
     public void shutdown() {
         System.exit(0);
     }

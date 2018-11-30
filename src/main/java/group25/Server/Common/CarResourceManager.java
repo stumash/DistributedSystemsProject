@@ -1,44 +1,21 @@
 package group25.Server.Common;
 
 import group25.Server.Interface.*;
-import group25.Server.TCP.*;
+
+import group25.Utils.XMLPersistor;
 
 import java.rmi.RemoteException;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.xml.XMLConstants;
+
 public abstract class CarResourceManager extends AbstractRMHashMapManager implements ICarResourceManager, ICustomerReservationManager {
     // Create a new car location or add cars to an existing location
     // NOTE: if price <= 0 and the location already exists, it maintains its current price
-    private String m_name = "";
     protected ICustomerResourceManager customerRM;
-    ReentrantLock commitLock = new ReentrantLock(true);
 
-    public CarResourceManager(String p_name) {
-        m_name = p_name;
-    }
-
-    public boolean vote(int xid) { // TODO TODO TODO TODO
-        try {
-            commitLock.lock();
-
-        } catch (Exception e) {
-            commitLock.unlock();
-        }
-
-        return true;
-    }
-
-    public boolean doCommit(int xid) { // TODO TODO TODO TODO
-        try {
-
-        } catch (Exception e) {
-            return false;
-        } finally {
-            if (commitLock.isHeldByCurrentThread()) {
-                commitLock.unlock();
-            }
-        }
-        return true;
+    public CarResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
+        super(p_name, filename1, filename2, pointerFile);
     }
 
     public boolean addCars(int xid, String location, int count, int price) throws RemoteException {
@@ -115,13 +92,5 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
             Trace.info("RM::reserveItem(" + xid + ", " + customerID + ", " + key + ", " + location + ") succeeded");
             return true;
         }
-    }
-
-    public String getName() throws RemoteException {
-        return m_name;
-    }
-
-    public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
-        return new ProxyCarResourceManager(hostname, port, boundName);
     }
 }

@@ -1,7 +1,7 @@
 package group25.Server.Common;
 
 import group25.Server.Interface.*;
-import group25.Server.TCP.*;
+
 
 import java.util.*;
 
@@ -185,10 +185,6 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         }
 
         return true;
-    }
-
-    public AbstractProxyObject makeProxyObject(String hostname, int port, String boundName) {
-        return new ProxyMiddlewareResourceManager(hostname, port, boundName);
     }
 
     public String getName() throws RemoteException, DeadlockException {

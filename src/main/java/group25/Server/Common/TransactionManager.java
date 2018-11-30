@@ -8,6 +8,7 @@ import group25.Server.LockManager.TransactionLockObject.LockType;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import javax.transaction.InvalidTransactionException;
@@ -27,6 +28,8 @@ public class TransactionManager implements Remote
     // create some data structure that can map XID to RM's it uses, as well as before images. This is how we maintain active transactions
     // keep an array list of these objects
     // on commit, remove this transaction. On abort, keep it. 
+
+    private HashMap<Integer, ArrayList<Pair<String, AbstractRMHashMapManager>>> resourceManagerRecorder = new HashMap<>();
 
     private HashMap<Integer, Long> transactionAges = new HashMap<>();
     // for each transaction that is currently active, store the most recent time an action was performed as part of the transaction.
@@ -86,22 +89,50 @@ public class TransactionManager implements Remote
 
     public synchronized int start() throws RemoteException {
         transactionCounter++;
-        writeRecorder.put(transactionCounter, new ArrayList<BeforeImage>());
+        resourceManagerRecorder.put(transactionCounter, new ArrayList<Pair<String, AbstractRMHashMapManager>>());
         synchronized(transactionAges) {
             transactionAges.put(transactionCounter, System.currentTimeMillis());
         }
         return transactionCounter;
     }
 
-    // QUESTION why does this have to throw TransactionAbortedException;
+
+
     public synchronized boolean commit(int xid) throws InvalidTransactionException, RemoteException {
         synchronized(transactionAges) {
             if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
         }
+
+        // HERE LIES 2PC
+        ArrayList<Pair<String, AbstractRMHashMapManager>> resourceManagers;
+        synchronized(resourceManagerRecorder) {
+            resourceManagers = resourceManagerRecorder.get(xid);
+        }
+        synchronized(resourceManagers) {
+            boolean anyNoVotes = false;
+            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+                boolean votedYes = rmPair.t2.vote(xid);
+                if (!votedYes) {
+                    anyNoVotes = true;
+                    break;
+                }
+            }
+            if (anyNoVotes) {
+                abort(xid);
+            }
+        }
+        synchronized(resourceManagers) {
+            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+                rmPair.t2.doCommit(xid);
+            }
+        }
+        // HERE ENDS 2PC
+
         lockManager.UnlockAll(xid);
-        writeRecorder.remove(xid);
+        resourceManagerRecorder.remove(xid);
         return true;
     }
+
     /**
      * Abort transaction associated with xid by
      * - unlocking all associated locks
@@ -113,12 +144,12 @@ public class TransactionManager implements Remote
         synchronized(transactionAges) {
             if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
         }
-        synchronized(writeRecorder) {
-            ArrayList<BeforeImage> beforeImages = writeRecorder.get(xid);
-            for (BeforeImage beforeImage : beforeImages) {
-                beforeImage.restore(xid);
+        synchronized(resourceManagerRecorder) {
+            ArrayList<Pair<String, AbstractRMHashMapManager>> resourceManagers = resourceManagerRecorder.get(xid);
+            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+                rmPair.t2.abort(xid);
             }
-            writeRecorder.remove(xid);
+            resourceManagerRecorder.remove(xid);
         }
         lockManager.UnlockAll(xid);
         Trace.info("TransactionRM::abort("+xid+")");
@@ -143,8 +174,23 @@ public class TransactionManager implements Remote
             if (beforeImagesForXid.indexOf(beforeImage) == -1) { // not already stored
                 beforeImagesForXid.add(beforeImage);
             }
+        } 
+    }
+
+    private void addResourceManagerToTransaction(int xid, AbstractRMHashMapManager rm) throws RemoteException {
+        synchronized(resourceManagerRecorder) {
+            ArrayList<Pair<String, AbstractRMHashMapManager>> rmsForXid = resourceManagerRecorder.get(xid);
+            Pair<String, AbstractRMHashMapManager> pair = new Pair<>(rm.getName(), rm);
+            if (!rmsForXid.contains(pair)) {
+                rmsForXid.add(pair);
+                rmsForXid.sort(new Comparator<Pair<String, AbstractRMHashMapManager>>() {
+                    @Override
+                    public int compare(Pair<String, AbstractRMHashMapManager> p1, Pair<String, AbstractRMHashMapManager> p2) {
+                        return p1.t1.compareTo(p2.t1);
+                    }
+                });
+            }
         }
-        
     }
 
     // before any write, we should create a key that will represent the data we are writing
@@ -157,7 +203,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
                 return flightRM.addFlight(xid, flightNum, flightSeats, flightPrice);
             }
         } catch (DeadlockException e) {
@@ -177,7 +223,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) carRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
                 return carRM.addCars(xid, location, numCars, price);
             }
         } catch (DeadlockException e) {
@@ -197,7 +243,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) roomRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) roomRM);
                 return roomRM.addRooms(xid, location, numRooms, price);
             }
         } catch (DeadlockException e) {
@@ -218,7 +264,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 if (customerRM.newCustomer(xid, cid)) {
                     return cid;
                 }
@@ -240,7 +286,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 return customerRM.newCustomer(xid, cid);
             }
         } catch (DeadlockException e) {
@@ -264,7 +310,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
                 return flightRM.deleteFlight(xid, flightNum);
             }
         } catch (DeadlockException e) {
@@ -288,7 +334,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) carRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
                 return carRM.deleteCars(xid, location);
             }
         } catch (DeadlockException e) {
@@ -312,7 +358,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) roomRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) roomRM);
                 return roomRM.deleteRooms(xid, location);
             }
         } catch (DeadlockException e) {
@@ -336,7 +382,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKey);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 return customerRM.deleteCustomer(xid, customerID);
             }
         } catch (DeadlockException e) {
@@ -496,8 +542,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyFlight+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKeyFlight);
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 return flightRM.reserveFlight(xid, customerID, flightNumber);  // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
@@ -520,8 +566,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCar+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) carRM, dataKeyCar);
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 return carRM.reserveCar(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
@@ -544,8 +590,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyRoom+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) flightRM, dataKeyRoom);
-                setUpBeforeImage(xid, (IAbstractRMHashMapManager) customerRM, dataKeyCustomer);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
                 return roomRM.reserveRoom(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
@@ -609,5 +655,17 @@ class BeforeImage {
         BeforeImage bOther = (BeforeImage) other;
         boolean isEqual = bOther.dataKey.equals(this.dataKey);
         return isEqual;
+    }
+}
+
+class Pair<T1, T2> {
+    T1 t1;
+    T2 t2;
+    Pair(T1 t1, T2 t2) {
+        this.t1 = t1;
+        this.t2 = t2;
+    }
+    public boolean equals(Pair<T1, T2> other) {
+        return t1.equals(other.t1);
     }
 }

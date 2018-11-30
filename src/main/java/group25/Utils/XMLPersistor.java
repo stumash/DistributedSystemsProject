@@ -58,8 +58,7 @@ public class XMLPersistor {
             fis.read(data);
             str = new String(data, "UTF-8");
         } catch (Exception e) {
-            System.out.println(RED.colorString("XMLPersistor.readObject() exception: ")+e.getMessage());
-            System.exit(1);
+            return null; // file not found
         }
 
         return (T)this.xstream.fromXML(str);

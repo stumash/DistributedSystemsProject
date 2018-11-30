@@ -4,7 +4,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import javax.transaction.InvalidTransactionException;
 
-import group25.Server.TCP.IProxiable;
+
 import group25.Server.LockManager.DeadlockException;
 
 import java.util.*;
@@ -25,7 +25,7 @@ import java.util.*;
  * has succeeded.
  */
 
-public interface IMiddlewareResourceManager extends Remote, IProxiable {
+public interface IMiddlewareResourceManager extends Remote {
     /**
      * Add seats to a flight.
      * <p>

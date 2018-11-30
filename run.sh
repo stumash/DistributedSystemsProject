@@ -279,24 +279,4 @@ if [ "${TCP_OR_RMI}" == "RMI" ]; then
         send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwp ${MID_RM_PORT} "\
                     "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
                     "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;
-elif [ "${TCP_OR_RMI}" == "TCP" ]; then
-    tmux new-session \; \
-        split-window -v \; \
-        split-window -h \; \
-        split-window -h \; \
-        select-pane -t 1 \; \
-        split-window -h \; \
-        select-pane -t 0 \; \
-        split-window -h \; \
-        select-pane -t 5 \; \
-        send-keys "ssh -t ${CUST_RM_HOST} \"$(run_tcp_server Customer ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 4 \; \
-        send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_tcp_server Flight ${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 3 \; \
-        send-keys "ssh -t ${CAR_RM_HOST} \"$(run_tcp_server Car ${CAR_RM_HOST} ${CAR_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 2 \; \
-        send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_tcp_server Room ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 1 \; \
-        send-keys "ssh -t ${MID_RM_HOST} \"$(run_tcp_middleware ${MID_RM_HOST} ${MID_RM_PORT} ${CUST_RM_HOST} ${CUST_RM_PORT} "\
-                  "${FLIGHT_RM_HOST} ${FLIGHT_RM_PORT} ${ROOM_RM_HOST} ${ROOM_RM_PORT} ${CAR_RM_HOST}) ${CAR_RM_PORT}\"" C-m \;
 fi

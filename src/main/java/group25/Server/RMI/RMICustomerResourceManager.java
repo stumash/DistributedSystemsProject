@@ -27,7 +27,7 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
     private static int s_serverPort = 2003;
 
     public RMICustomerResourceManager(String name) {
-        super(name);
+        super(name, "customerData1", "customerData2", "customerMasterRecord");
     }
 
     public static void main(String args[]) {

@@ -22,7 +22,7 @@ public class RMIRoomResourceManager extends RoomResourceManager {
     private static int s_customerServerPort = 2003;
 
     public RMIRoomResourceManager(String name) {
-        super(name);
+        super(name, "roomData1", "roomData2", "roomMasterRecord");
     }
 
     public static void main(String args[]) {

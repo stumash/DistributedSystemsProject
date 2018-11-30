@@ -3,11 +3,11 @@ package group25.Server.Interface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import group25.Server.TCP.IProxiable;
+
 
 import java.util.*;
 
-public interface ICarResourceManager extends Remote, IProxiable, IAbstractRMHashMapManager {
+public interface ICarResourceManager extends Remote, IAbstractRMHashMapManager {
     /**
      * Reserve a car at this location.
      *
