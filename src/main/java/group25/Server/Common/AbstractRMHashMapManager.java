@@ -18,6 +18,7 @@ public abstract class AbstractRMHashMapManager {
 
     // TODO: give lock to correct transaction on wakeup from failure
     public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile) {
+        System.out.println(filename1);
         this.m_name = p_name;
         this.filename1 = filename1;
         this.filename2 = filename2;
@@ -32,7 +33,7 @@ public abstract class AbstractRMHashMapManager {
         }
     }
 
-    public boolean vote(int xid) {
+    public boolean vote(int xid) throws RemoteException {
         if (!transactionExists(xid)) return false;
 
         // get global lock
@@ -43,7 +44,7 @@ public abstract class AbstractRMHashMapManager {
         return true;
     }
 
-    public boolean doCommit(int xid) {
+    public boolean doCommit(int xid) throws RemoteException {
         // update pointer file
         if (currentCommitFile.equals(filename1)) {
             xmlPersistor.writeObject(filename2, pointerFile);
@@ -62,7 +63,7 @@ public abstract class AbstractRMHashMapManager {
         return true;
     }
 
-    public boolean abort(int xid) {
+    public boolean abort(int xid) throws RemoteException {
         if (globalLock.getLockOwner() == xid) {
             synchronized(globalState) {
                 removeTransactionState(xid);
@@ -111,15 +112,27 @@ public abstract class AbstractRMHashMapManager {
 
             // write to file
             if  (currentCommitFile.equals(filename1)) {
+                System.out.println("commit file is " + filename1);
                 xmlPersistor.writeObject(globalState, filename2);
             } else if  (currentCommitFile.equals(filename2)) {
+                System.out.println("commit file is " + filename2);
                 xmlPersistor.writeObject(globalState, filename1);
+            } else {
+                System.out.println("fuck off");
             }
         }
     }
 
     public RMItem readData(int xid, String key) {
         RMHashMap m_data = getTransactionState(xid);
+        if (m_data == null) {
+            synchronized(globalState) {
+                synchronized(transactionStates) {
+                    transactionStates.put(xid, globalState.clone());
+                }
+            }
+            m_data = getTransactionState(xid);
+        }
         synchronized (m_data) {
             RMItem item = m_data.get(key);
             if (item != null) {
@@ -139,6 +152,7 @@ public abstract class AbstractRMHashMapManager {
                 }
             }
         }
+        m_data = getTransactionState(xid);
         synchronized (m_data) {
             m_data.put(key, value);
         }

@@ -29,7 +29,7 @@ public class TransactionManager implements Remote
     // keep an array list of these objects
     // on commit, remove this transaction. On abort, keep it. 
 
-    private HashMap<Integer, ArrayList<Pair<String, AbstractRMHashMapManager>>> resourceManagerRecorder = new HashMap<>();
+    private HashMap<Integer, ArrayList<Pair<String, IAbstractRMHashMapManager>>> resourceManagerRecorder = new HashMap<>();
 
     private HashMap<Integer, Long> transactionAges = new HashMap<>();
     // for each transaction that is currently active, store the most recent time an action was performed as part of the transaction.
@@ -89,7 +89,7 @@ public class TransactionManager implements Remote
 
     public synchronized int start() throws RemoteException {
         transactionCounter++;
-        resourceManagerRecorder.put(transactionCounter, new ArrayList<Pair<String, AbstractRMHashMapManager>>());
+        resourceManagerRecorder.put(transactionCounter, new ArrayList<Pair<String, IAbstractRMHashMapManager>>());
         synchronized(transactionAges) {
             transactionAges.put(transactionCounter, System.currentTimeMillis());
         }
@@ -104,13 +104,13 @@ public class TransactionManager implements Remote
         }
 
         // HERE LIES 2PC
-        ArrayList<Pair<String, AbstractRMHashMapManager>> resourceManagers;
+        ArrayList<Pair<String, IAbstractRMHashMapManager>> resourceManagers;
         synchronized(resourceManagerRecorder) {
             resourceManagers = resourceManagerRecorder.get(xid);
         }
         synchronized(resourceManagers) {
             boolean anyNoVotes = false;
-            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
                 boolean votedYes = rmPair.t2.vote(xid);
                 if (!votedYes) {
                     anyNoVotes = true;
@@ -122,7 +122,7 @@ public class TransactionManager implements Remote
             }
         }
         synchronized(resourceManagers) {
-            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
                 rmPair.t2.doCommit(xid);
             }
         }
@@ -145,8 +145,8 @@ public class TransactionManager implements Remote
             if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
         }
         synchronized(resourceManagerRecorder) {
-            ArrayList<Pair<String, AbstractRMHashMapManager>> resourceManagers = resourceManagerRecorder.get(xid);
-            for (Pair<String, AbstractRMHashMapManager> rmPair : resourceManagers) {
+            ArrayList<Pair<String, IAbstractRMHashMapManager>> resourceManagers = resourceManagerRecorder.get(xid);
+            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
                 rmPair.t2.abort(xid);
             }
             resourceManagerRecorder.remove(xid);
@@ -177,15 +177,15 @@ public class TransactionManager implements Remote
         } 
     }
 
-    private void addResourceManagerToTransaction(int xid, AbstractRMHashMapManager rm) throws RemoteException {
+    private void addResourceManagerToTransaction(int xid, IAbstractRMHashMapManager rm) throws RemoteException {
         synchronized(resourceManagerRecorder) {
-            ArrayList<Pair<String, AbstractRMHashMapManager>> rmsForXid = resourceManagerRecorder.get(xid);
-            Pair<String, AbstractRMHashMapManager> pair = new Pair<>(rm.getName(), rm);
+            ArrayList<Pair<String, IAbstractRMHashMapManager>> rmsForXid = resourceManagerRecorder.get(xid);
+            Pair<String, IAbstractRMHashMapManager> pair = new Pair<>(rm.getName(), rm);
             if (!rmsForXid.contains(pair)) {
                 rmsForXid.add(pair);
-                rmsForXid.sort(new Comparator<Pair<String, AbstractRMHashMapManager>>() {
+                rmsForXid.sort(new Comparator<Pair<String, IAbstractRMHashMapManager>>() {
                     @Override
-                    public int compare(Pair<String, AbstractRMHashMapManager> p1, Pair<String, AbstractRMHashMapManager> p2) {
+                    public int compare(Pair<String, IAbstractRMHashMapManager> p1, Pair<String, IAbstractRMHashMapManager> p2) {
                         return p1.t1.compareTo(p2.t1);
                     }
                 });
@@ -203,7 +203,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
                 return flightRM.addFlight(xid, flightNum, flightSeats, flightPrice);
             }
         } catch (DeadlockException e) {
@@ -223,7 +223,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
                 return carRM.addCars(xid, location, numCars, price);
             }
         } catch (DeadlockException e) {
@@ -243,7 +243,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) roomRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) roomRM);
                 return roomRM.addRooms(xid, location, numRooms, price);
             }
         } catch (DeadlockException e) {
@@ -264,7 +264,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 if (customerRM.newCustomer(xid, cid)) {
                     return cid;
                 }
@@ -286,7 +286,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return customerRM.newCustomer(xid, cid);
             }
         } catch (DeadlockException e) {
@@ -310,7 +310,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
                 return flightRM.deleteFlight(xid, flightNum);
             }
         } catch (DeadlockException e) {
@@ -334,7 +334,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
                 return carRM.deleteCars(xid, location);
             }
         } catch (DeadlockException e) {
@@ -358,7 +358,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) roomRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) roomRM);
                 return roomRM.deleteRooms(xid, location);
             }
         } catch (DeadlockException e) {
@@ -382,7 +382,7 @@ public class TransactionManager implements Remote
                     abort(xid);
                     return false;
                 }
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return customerRM.deleteCustomer(xid, customerID);
             }
         } catch (DeadlockException e) {
@@ -402,6 +402,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
                 return flightRM.queryFlight(xid, flightNumber);
             }
 
@@ -422,6 +423,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
                 return carRM.queryCars(xid, location);
             }
 
@@ -442,6 +444,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) roomRM);
                 return roomRM.queryRooms(xid, location);
             }
 
@@ -462,6 +465,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return customerRM.queryCustomerInfo(xid, customerID);
             }
 
@@ -482,6 +486,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
                 return flightRM.queryFlightPrice(xid, flightNumber);
             }
         } catch (DeadlockException e) {
@@ -501,6 +506,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
                 return carRM.queryCarsPrice(xid, location);
             }
         } catch (DeadlockException e) {
@@ -520,6 +526,7 @@ public class TransactionManager implements Remote
             if (!gotLock) {
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_READ+") - Bad input!");
             } else {
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) roomRM);
                 return roomRM.queryRoomsPrice(xid, location);
             }
         } catch (DeadlockException e) {
@@ -542,8 +549,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyFlight+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return flightRM.reserveFlight(xid, customerID, flightNumber);  // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
@@ -566,8 +573,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCar+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) carRM);
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return carRM.reserveCar(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
@@ -590,8 +597,8 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyRoom+","+LockType.LOCK_WRITE+") - Bad input!\nOR\n");
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKeyCustomer+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) flightRM);
-                addResourceManagerToTransaction(xid, (AbstractRMHashMapManager) customerRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
+                addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return roomRM.reserveRoom(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {

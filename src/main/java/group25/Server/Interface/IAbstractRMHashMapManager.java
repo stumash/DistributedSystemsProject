@@ -11,4 +11,12 @@ public interface IAbstractRMHashMapManager extends Remote {
     public void writeData(int xid, String key, RMItem value) throws RemoteException;
     
     public void removeData(int xid, String key) throws RemoteException;
+
+    public boolean vote(int xid) throws RemoteException;
+
+    public boolean doCommit(int xid) throws RemoteException;
+
+    public boolean abort(int xid) throws RemoteException;
+
+    public String getName() throws RemoteException;
 }

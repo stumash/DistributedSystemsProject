@@ -46,7 +46,10 @@ public class FairWaitInterruptibleLock {
         synchronized(this) {
             xids.removeFirst(); // remove yourself from queue
             xidToSemaphore.remove(xid); // and from map of semaphores
-            int nextXid = xids.peekFirst(); // then get the next xid
+            Integer nextXid = xids.peekFirst(); // then get the next xid
+            if (nextXid == null) {
+                return true;
+            }
             xidToSemaphore.get(nextXid).release(); // and wake him up
             return true; // release successful
         }
