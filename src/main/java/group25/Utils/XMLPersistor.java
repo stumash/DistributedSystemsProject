@@ -22,6 +22,7 @@ public class XMLPersistor {
 
     private XStream xstream;
 
+    // TODO just make this an AbstractRMHHashmapManager
     public XMLPersistor(Class classToWrite) {
         XStream xstream = new XStream();
         XStream.setupDefaultSecurity(xstream);
@@ -33,6 +34,7 @@ public class XMLPersistor {
                 Room.class,
                 Car.class,
                 Customer.class,
+                ReservedItem.class,
         });
         this.xstream = xstream;
     }
