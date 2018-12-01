@@ -100,19 +100,23 @@ public class TransactionManager implements Remote
 
     public synchronized boolean commit(int xid) throws InvalidTransactionException, RemoteException {
         synchronized(transactionAges) {
-            if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+            if (transactionAges.remove(xid) == null) {
+                throw new InvalidTransactionException();
+            }
         }
 
         // HERE LIES 2PC
         ArrayList<Pair<String, IAbstractRMHashMapManager>> resourceManagers;
         synchronized(resourceManagerRecorder) {
             resourceManagers = resourceManagerRecorder.get(xid);
+    
         }
         synchronized(resourceManagers) {
             boolean anyNoVotes = false;
             for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
                 boolean votedYes = rmPair.t2.vote(xid);
                 if (!votedYes) {
+                    System.out.println(rmPair.t1 + "voted no");
                     anyNoVotes = true;
                     break;
                 }
@@ -181,7 +185,10 @@ public class TransactionManager implements Remote
         synchronized(resourceManagerRecorder) {
             ArrayList<Pair<String, IAbstractRMHashMapManager>> rmsForXid = resourceManagerRecorder.get(xid);
             Pair<String, IAbstractRMHashMapManager> pair = new Pair<>(rm.getName(), rm);
-            if (!rmsForXid.contains(pair)) {
+            System.out.println(rmsForXid.size());
+            if (rmsForXid.indexOf(pair) == -1) {
+                System.out.println("adding pair");
+                System.out.println("pair" + pair.t1);
                 rmsForXid.add(pair);
                 rmsForXid.sort(new Comparator<Pair<String, IAbstractRMHashMapManager>>() {
                     @Override
@@ -672,7 +679,12 @@ class Pair<T1, T2> {
         this.t1 = t1;
         this.t2 = t2;
     }
-    public boolean equals(Pair<T1, T2> other) {
-        return t1.equals(other.t1);
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof Pair<?, ?>)) {
+            return false;
+        }
+        Pair<?, ?> pOther = (Pair<?,?>) other;
+        return t1.equals(pOther.t1);
     }
 }

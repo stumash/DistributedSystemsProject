@@ -18,7 +18,7 @@ public abstract class AbstractRMHashMapManager {
 
     // TODO: give lock to correct transaction on wakeup from failure
     public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile) {
-        System.out.println(filename1);
+        System.out.println(pointerFile);
         this.m_name = p_name;
         this.filename1 = filename1;
         this.filename2 = filename2;
