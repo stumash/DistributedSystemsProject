@@ -22,7 +22,7 @@ public class RMIRoomResourceManager extends RoomResourceManager {
     private static int s_customerServerPort = 2003;
 
     public RMIRoomResourceManager(String name) {
-        super(name, "roomData1", "roomData2", "roomMasterRecord");
+        super(name, RMIUtils.DATA_FILE_PATH+"/roomData1.xml", RMIUtils.DATA_FILE_PATH+"/roomData2.xml", RMIUtils.DATA_FILE_PATH+"/roomMasterRecord.xml");
     }
 
     public static void main(String args[]) {

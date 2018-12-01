@@ -20,7 +20,7 @@ public class RMIFlightResourceManager extends FlightResourceManager {
     private static int s_customerServerPort = 2003;
 
     public RMIFlightResourceManager(String name) {
-        super(name, "flightData1.xml", "flightData2.xml", "flightMasterRecord.xml");
+        super(name, RMIUtils.DATA_FILE_PATH+"/flightData1.xml", RMIUtils.DATA_FILE_PATH+"/flightData2.xml", RMIUtils.DATA_FILE_PATH+"/flightMasterRecord.xml");
     }
 
     public static void main(String args[]) {

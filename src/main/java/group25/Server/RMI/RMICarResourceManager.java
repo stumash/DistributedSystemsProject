@@ -28,7 +28,7 @@ public class RMICarResourceManager extends CarResourceManager {
     private static int s_customerServerPort = 2003;
 
     public RMICarResourceManager(String name) {
-        super(name, "carData1", "carData2", "carMasterRecord");
+        super(name, RMIUtils.DATA_FILE_PATH+"/carData1.xml", RMIUtils.DATA_FILE_PATH+"/carData2.xml", RMIUtils.DATA_FILE_PATH+"/carMasterRecord.xml");
     }
 
     public static void main(String args[]) {

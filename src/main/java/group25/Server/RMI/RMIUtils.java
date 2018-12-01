@@ -15,6 +15,7 @@ import static group25.Utils.AnsiColors.RED;
 public class RMIUtils {
 
     private static final String RMI_OBJECT_NAME_PREFIX = "group25_";
+    protected static final String DATA_FILE_PATH = (System.getProperty("user.home")) + "/comp512/DistributedSystemsProject/Data";
 
     public static <T> T createRMIproxyObject(Remote objToStub, int port) {
         T retval = null;
