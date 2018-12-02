@@ -141,6 +141,11 @@ public abstract class AbstractRMHashMapManager {
             RMHashMap m_data = getTransactionState(xid);
             if (m_data == null) return;
 
+            for (String i : globalState.keySet()) {
+                if (!m_data.containsKey(i)) {
+                    globalState.remove(i);
+                }
+            }
             for (String i : m_data.keySet()) {
                 globalState.put(i, m_data.get(i));
             }
