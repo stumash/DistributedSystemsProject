@@ -12,7 +12,7 @@ public interface IAbstractRMHashMapManager extends Remote {
     
     public void removeData(int xid, String key) throws RemoteException;
 
-    public boolean vote(int xid) throws RemoteException;
+    public void vote(int xid) throws RemoteException;
 
     public boolean doCommit(int xid) throws RemoteException;
 

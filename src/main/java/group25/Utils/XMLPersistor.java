@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
@@ -19,17 +21,17 @@ import group25.Server.Common.*;
 public class XMLPersistor {
 
     private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+    private final String DATA_FILE_PATH = (System.getProperty("user.home")) + "/comp512/DistributedSystemsProject/Data";
 
     private XStream xstream;
 
-    // TODO just make this an AbstractRMHHashmapManager
-    public XMLPersistor(Class classToWrite) {
+    public XMLPersistor() {
         XStream xstream = new XStream();
         XStream.setupDefaultSecurity(xstream);
         xstream.allowTypes(new Class[] {
                 HashMap.class,
                 String.class,
-                classToWrite,
+                AbstractRMHashMapManager.class,
                 Flight.class,
                 Room.class,
                 Car.class,
@@ -39,18 +41,18 @@ public class XMLPersistor {
         this.xstream = xstream;
     }
 
-    public boolean writeObject(Object obj, String filepath) {
+    public boolean writeObject(Object obj, String filename) {
         FileOutputStream fos = null;
-        File dataFile = new File(filepath);
+        File dataFile = new File(DATA_FILE_PATH+"/" + filename);
         try {
             dataFile.getParentFile().mkdir();
             dataFile.createNewFile();
             String objAsXML = this.xstream.toXML(obj);
             fos = new FileOutputStream(dataFile);
             fos.write("<?xml version=\"1.0\"?>\n".getBytes("UTF-8")); // XStream doesn't do this for you
-            byte[] bytes = objAsXML.getBytes("UTF-8");
-            fos.write(bytes);
-            System.out.println("finished writing " + bytes);
+            byte[] data = objAsXML.getBytes("UTF-8");
+            fos.write(data);
+            System.out.println("finished writing " + data);
         } catch (Exception e) {
             System.out.println(RED.colorString("XMLPersistor.writeObject() exception: ")+e.getMessage());
             System.exit(1);
@@ -71,7 +73,7 @@ public class XMLPersistor {
         String str = null;
 
         try {
-            File file = new File(filepath);
+            File file = new File(DATA_FILE_PATH+"/"+filepath);
             FileInputStream fis = new FileInputStream(file);
             byte[] data = new byte[(int) file.length()];
 
@@ -83,5 +85,37 @@ public class XMLPersistor {
         }
 
         return (T)this.xstream.fromXML(str);
+    }
+    
+    public ObjectOutputStream getWriteAppendStream(String filepath) {
+        File dataFile = new File(DATA_FILE_PATH+"/"+filepath);
+        ObjectOutputStream oos = null;
+        try {
+            dataFile.getParentFile().mkdir();
+            dataFile.createNewFile();
+            oos = xstream.createObjectOutputStream(new FileOutputStream(dataFile));
+            return oos;
+        } catch (Exception e) {
+            System.out.println(RED.colorString("XMLPersistor.getWriteAppendStream() exception: ")+e.getMessage());
+            System.exit(1);
+        }
+        return null;  
+    }
+
+    public ObjectInputStream getReadAppendStream(String filepath) {
+        File dataFile = new File(DATA_FILE_PATH+"/"+filepath);
+        try {
+            dataFile.getParentFile().mkdir();
+            if (!dataFile.exists()) {
+                System.out.println(RED.colorString("")+"");
+                System.exit(1);
+            }
+            ObjectInputStream ois = xstream.createObjectInputStream(new FileInputStream(dataFile));
+            return ois;
+        } catch (Exception e) {
+            System.out.println(RED.colorString("ERROR: ")+"XMLPersistor.getReadAppendStream() exception: "+e.getMessage());
+            System.exit(1);
+        }
+        return null;
     }
 }

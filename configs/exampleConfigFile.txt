@@ -1,4 +1,3 @@
-TCP_OR_RMI <val> # <val> must be TCP or RMI
 MID_RM hostname port
 CAR_RM hostname port
 FLIGHT_RM hostname port

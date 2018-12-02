@@ -9,8 +9,10 @@ import java.io.*;
 
 public class CustomerResourceManager extends AbstractRMHashMapManager implements ICustomerResourceManager {
 
-    public CustomerResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
-        super(p_name, filename1, filename2, pointerFile);
+    public CustomerResourceManager(
+            String p_name, String filename1, String filename2, String pointerFile, String logFile,
+            IMiddlewareResourceManager middlewareRM) {
+        super(p_name, filename1, filename2, pointerFile, logFile, middlewareRM);
     }
 
     public synchronized int getNewCustomerId(int xid) {

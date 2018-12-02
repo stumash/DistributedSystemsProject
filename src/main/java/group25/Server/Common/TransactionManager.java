@@ -4,12 +4,18 @@ import group25.Server.Interface.*;
 import group25.Server.LockManager.DeadlockException;
 import group25.Server.LockManager.LockManager;
 import group25.Server.LockManager.TransactionLockObject.LockType;
+import group25.Utils.CrashMode;
+import static group25.Utils.AnsiColors.RED;
+import static group25.Utils.AnsiColors.BLUE;
+import static group25.Utils.AnsiColors.GREEN;
+
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.concurrent.Semaphore;
 
 import javax.transaction.InvalidTransactionException;
 
@@ -24,17 +30,13 @@ public class TransactionManager implements Remote
     private ICustomerResourceManager customerRM;
     private int transactionCounter = 0;
 
-    private HashMap<Integer, ArrayList<BeforeImage>> writeRecorder = new HashMap<>();
-    // create some data structure that can map XID to RM's it uses, as well as before images. This is how we maintain active transactions
-    // keep an array list of these objects
-    // on commit, remove this transaction. On abort, keep it. 
+    private HashMap<Integer, Semaphore> voteReplyWaitMap = new HashMap<>();
 
-    private HashMap<Integer, ArrayList<Pair<String, IAbstractRMHashMapManager>>> resourceManagerRecorder = new HashMap<>();
+    private CrashMode crashMode = CrashMode.NO_CRASH;
+
+    private HashMap<Integer, ArrayList<Name_RM_Vote>> resourceManagerRecorder = new HashMap<>();
 
     private HashMap<Integer, Long> transactionAges = new HashMap<>();
-    // for each transaction that is currently active, store the most recent time an action was performed as part of the transaction.
-    // this will be useful for 'time-to-live' calculations. when the time associated to the transaction is more than TRANSACTION_MAX_AGE_MILLIS old,
-    // we will abort the transaction from a separate thread.
 
     public TransactionManager(
             ICarResourceManager carRM,
@@ -49,6 +51,21 @@ public class TransactionManager implements Remote
         this.customerRM = customerRM;
 
         setUpTimeToLiveThread();
+    }
+
+    private void crashIf(CrashMode cm) {
+        if (crashMode == cm) {
+            System.out.println(BLUE.colorString("CRASH: ")+cm.toString());
+            shutdown();
+        }
+    }
+
+    public void crashMiddleware(CrashMode cm) {
+        if (cm.toString().substring(0,2).equals("RM")) {
+            System.out.println(RED.colorString("Error: ")+"Invalid crash mode chosen for TM: "+cm.toString());
+            return;
+        }
+        crashMode = cm;
     }
 
     private void setUpTimeToLiveThread() {
@@ -89,14 +106,12 @@ public class TransactionManager implements Remote
 
     public synchronized int start() throws RemoteException {
         transactionCounter++;
-        resourceManagerRecorder.put(transactionCounter, new ArrayList<Pair<String, IAbstractRMHashMapManager>>());
+        resourceManagerRecorder.put(transactionCounter, new ArrayList<>());
         synchronized(transactionAges) {
             transactionAges.put(transactionCounter, System.currentTimeMillis());
         }
         return transactionCounter;
     }
-
-
 
     public synchronized boolean commit(int xid) throws InvalidTransactionException, RemoteException {
         synchronized(transactionAges) {
@@ -105,36 +120,111 @@ public class TransactionManager implements Remote
             }
         }
 
-        // HERE LIES 2PC
-        ArrayList<Pair<String, IAbstractRMHashMapManager>> resourceManagers;
+        // ------------- HERE LIES 2PC -------------
+        ArrayList<Name_RM_Vote> resourceManagers;
+        synchronized(resourceManagerRecorder) {
+            resourceManagers = resourceManagerRecorder.get(xid);    
+        }
+
+        crashIf(CrashMode.TM_BEFORE_VOTE_REQUEST);
+        System.out.println("acquired it");
+        synchronized(resourceManagers) {
+            resourceManagers = (ArrayList<Name_RM_Vote>)resourceManagers.clone();
+        }
+        for (Name_RM_Vote name_rm_vote : resourceManagers) {
+            name_rm_vote.rm.vote(xid);
+        }
+        System.out.println("released it");
+        crashIf(CrashMode.TM_BEFORE_ANY_VOTE_REPLIES);
+
+        Semaphore sem = new Semaphore(1);
+        synchronized(voteReplyWaitMap) {
+            voteReplyWaitMap.put(xid, sem);
+        }
+        try {
+            sem.acquire();
+            sem.acquire();
+        } catch (Exception e) { /* do nothing cuz wtf */ }
+        synchronized(voteReplyWaitMap) {
+            if (!voteReplyWaitMap.containsKey(xid)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+    
+    public void receiveVote(int xid, boolean voteYes, String rmName) {
+        Semaphore sem = voteReplyWaitMap.get(xid);
+        if (!voteYes) {
+            System.out.println("vote no");
+            try {
+                abort(xid);
+                synchronized(voteReplyWaitMap) {
+                    voteReplyWaitMap.remove(xid);
+                    sem.release();
+                }
+                return;
+            } catch (InvalidTransactionException e) {
+                return;
+            } catch (RemoteException e) {
+                // TODO handle this
+                e.printStackTrace();
+            }
+        }
+
+        ArrayList<Name_RM_Vote> resourceManagers;
         synchronized(resourceManagerRecorder) {
             resourceManagers = resourceManagerRecorder.get(xid);
-    
         }
+        System.out.println("got it!!!! " + resourceManagerRecorder);
+
+        if (resourceManagers == null) {
+            System.out.println("resource managers is null");
+            return;
+        }; // already aborted
+
+        boolean allYes = false;
+        System.out.println("about to go into the resourcemanagers");
         synchronized(resourceManagers) {
-            boolean anyNoVotes = false;
-            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
-                boolean votedYes = rmPair.t2.vote(xid);
-                if (!votedYes) {
-                    System.out.println(rmPair.t1 + "voted no");
-                    anyNoVotes = true;
-                    break;
+            System.out.println("about to do more shit");
+            int numRMs = resourceManagers.size();
+            System.out.println(xid + " used " + " numRMs " + numRMs);
+            int yesCount = 0;
+            for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                if (name_rm_vote.rmName.equals(rmName)) {
+                    System.out.println("got the dudes vote");
+                    if (voteYes) {
+                        System.out.println("voted yes");
+                        name_rm_vote.votedYes = true;
+                    }
+                }
+                if (name_rm_vote.votedYes != null && name_rm_vote.votedYes) {
+                    yesCount++;
                 }
             }
-            if (anyNoVotes) {
-                abort(xid);
+            if (yesCount == numRMs) {
+                System.out.println("all yesses");
+                allYes = true;
+            }
+            if (allYes) {
+                for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                    try {
+                        System.out.println("calling do commit");
+                        name_rm_vote.rm.doCommit(xid);
+                    } catch (RemoteException e) {
+                        // TODO handle this
+                        e.printStackTrace();
+                    }
+                }
             }
         }
-        synchronized(resourceManagers) {
-            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
-                rmPair.t2.doCommit(xid);
-            }
-        }
-        // HERE ENDS 2PC
-
+        //  ------------- HERE ENDS 2PC -------------
+        System.out.println("unlocking and releasing");
         lockManager.UnlockAll(xid);
         resourceManagerRecorder.remove(xid);
-        return true;
+        sem.release();
+        return;
     }
 
     /**
@@ -149,9 +239,9 @@ public class TransactionManager implements Remote
             if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
         }
         synchronized(resourceManagerRecorder) {
-            ArrayList<Pair<String, IAbstractRMHashMapManager>> resourceManagers = resourceManagerRecorder.get(xid);
-            for (Pair<String, IAbstractRMHashMapManager> rmPair : resourceManagers) {
-                rmPair.t2.abort(xid);
+            ArrayList<Name_RM_Vote> resourceManagers = resourceManagerRecorder.get(xid);
+            for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                name_rm_vote.rm.abort(xid);
             }
             resourceManagerRecorder.remove(xid);
         }
@@ -160,42 +250,12 @@ public class TransactionManager implements Remote
         return true;
     }
 
-    /**
-     * record the before images of data before updating it. only do so for data
-     * whose before image is not already recorded.
-     * 
-     * @param xid
-     * @param dataKey
-     * @throws RemoteException
-     */
-    private void setUpBeforeImage(int xid, IAbstractRMHashMapManager rm, String dataKey) throws RemoteException {
-        synchronized(writeRecorder) {
-            ArrayList<BeforeImage> beforeImagesForXid = writeRecorder.get(xid);
-            // flights been deleted, this will return null
-            RMItem rItem = (RMItem) rm.readData(xid, dataKey); // this returns a clone
-            // make a new before image. and this won't be stored because the rItem is new!
-            BeforeImage beforeImage = new BeforeImage(rm, dataKey, rItem);
-            if (beforeImagesForXid.indexOf(beforeImage) == -1) { // not already stored
-                beforeImagesForXid.add(beforeImage);
-            }
-        } 
-    }
-
     private void addResourceManagerToTransaction(int xid, IAbstractRMHashMapManager rm) throws RemoteException {
         synchronized(resourceManagerRecorder) {
-            ArrayList<Pair<String, IAbstractRMHashMapManager>> rmsForXid = resourceManagerRecorder.get(xid);
-            Pair<String, IAbstractRMHashMapManager> pair = new Pair<>(rm.getName(), rm);
-            System.out.println(rmsForXid.size());
+            ArrayList<Name_RM_Vote> rmsForXid = resourceManagerRecorder.get(xid);
+            Name_RM_Vote pair = new Name_RM_Vote(rm.getName(), rm);
             if (rmsForXid.indexOf(pair) == -1) {
-                System.out.println("adding pair");
-                System.out.println("pair" + pair.t1);
                 rmsForXid.add(pair);
-                rmsForXid.sort(new Comparator<Pair<String, IAbstractRMHashMapManager>>() {
-                    @Override
-                    public int compare(Pair<String, IAbstractRMHashMapManager> p1, Pair<String, IAbstractRMHashMapManager> p2) {
-                        return p1.t1.compareTo(p2.t1);
-                    }
-                });
             }
         }
     }
@@ -616,6 +676,11 @@ public class TransactionManager implements Remote
         return false;
     }
 
+    public void shutdown() {
+        System.out.println(BLUE.colorString("Coordinator shutting down"));
+        System.exit(1);
+    }
+
     public boolean shutdownAllResourceManagers(){
         try {
             carRM.shutdown();
@@ -672,19 +737,22 @@ class BeforeImage {
     }
 }
 
-class Pair<T1, T2> {
-    T1 t1;
-    T2 t2;
-    Pair(T1 t1, T2 t2) {
-        this.t1 = t1;
-        this.t2 = t2;
+class Name_RM_Vote {
+    String rmName;
+    IAbstractRMHashMapManager rm;
+    Boolean votedYes;
+
+    Name_RM_Vote(String rmName, IAbstractRMHashMapManager rm) {
+        this.rmName = rmName;
+        this.rm = rm;
+        votedYes = null;
     }
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof Pair<?, ?>)) {
+        if (!(other instanceof Name_RM_Vote)) {
             return false;
         }
-        Pair<?, ?> pOther = (Pair<?,?>) other;
-        return t1.equals(pOther.t1);
+        Name_RM_Vote pOther = (Name_RM_Vote) other;
+        return rmName.equals(pOther.rmName);
     }
 }

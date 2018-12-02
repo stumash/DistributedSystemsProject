@@ -14,8 +14,9 @@ public abstract class CarResourceManager extends AbstractRMHashMapManager implem
     // NOTE: if price <= 0 and the location already exists, it maintains its current price
     protected ICustomerResourceManager customerRM;
 
-    public CarResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
-        super(p_name, filename1, filename2, pointerFile);
+    public CarResourceManager(String p_name, String filename1, String filename2, String pointerFile, String logFile,
+            IMiddlewareResourceManager middlewareRM) {
+        super(p_name, filename1, filename2, pointerFile, logFile, middlewareRM);
     }
 
     public boolean addCars(int xid, String location, int count, int price) throws RemoteException {

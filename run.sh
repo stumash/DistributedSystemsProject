@@ -71,9 +71,6 @@ fi
 
 while read key value1 value2; do
     case "${key}" in
-        "TCP_OR_RMI")
-            TCP_OR_RMI="${value1}"
-            ;;
         "MID_RM")
             MID_RM_HOST="${value1}"
             MID_RM_PORT="${value2}"
@@ -100,11 +97,6 @@ done < "${configFile}"
 # validate data read from config file
 #-----------------------------------
 
-if [ -z "${TCP_OR_RMI}" ] || [ "${TCP_OR_RMI}" != "RMI" ] && [ "${TCP_OR_RMI}" != "TCP" ]; then
-    echo "error in config file: key 'TCP_OR_RMI' must have value 'TCP' or 'RMI'"
-    exit 1
-fi
-
 for host in "${MID_RM_HOST}" "${CAR_RM_HOST}" "${FLIGHT_RM_HOST}" "${ROOM_RM_HOST}" "${CUST_RM_HOST}"; do
     if [ -z "${host}" ]; then
         echo "error in config file: empty hostname"
@@ -130,7 +122,7 @@ if [ "${2}" == "--client" ]; then
     cd "${BUILD_DIR}"
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
     java "${java_secpol_flag}" -classpath "${LIB_DIR}/*:."\
-            "group25.Client.${TCP_OR_RMI}Client"\
+            "group25.Client.RMIClient"\
             -mwh "${MID_RM_HOST}"\
             -mwp "${MID_RM_PORT}"
     exit 0
@@ -171,7 +163,7 @@ if [ "${2}" == "--testclient" ]; then
     cd "${BUILD_DIR}"
     java_secpol_flag="-Djava.security.policy=${RES_DIR}/java.policy"
     java "${java_secpol_flag}" -classpath "${LIB_DIR}/*:."\
-            "group25.Client.${TCP_OR_RMI}TestClient"\
+            "group25.Client.RMITestClient"\
             "${MID_RM_HOST}"\
             "${MID_RM_PORT}"\
             "${@}"
@@ -214,69 +206,33 @@ function run_rmi_middleware() {
                 "${@}"
 }
 
-function run_tcp_server() {
-    # ${1}: type of resource manager ('Car','Flight','Room','Customer')
-    # ${2}: listening hostname
-    # ${3}: listening port
-    # ${4}: customer resource manager hostname
-    # ${5}: customer resource manager port
-    rm_type="${1}"
-    shift
-    echo \
-        "echo -n 'Connected to '; hostname; "\
-        "cd ${BUILD_DIR} > /dev/null; "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy"\
-                "-classpath \"${LIB_DIR}/*:.\""\
-                "group25.Server.TCP.TCP${rm_type}ResourceManager"\
-                "${@}"
-}
-
-function run_tcp_middleware() {
-    # ${1}:  middleware hostname
-    # ${2}:  middleware port
-    # ${3}:  customer hostname
-    # ${4}:  customer port
-    # ${5}:  flight hostname
-    # ${6}:  flight port
-    # ${7}:  room hostname
-    # ${8}:  room port
-    # ${9}:  car hostname
-    # ${10}: car port
-    echo \
-        "echo -n 'Connected to '; hostname; "\
-        "cd ${BUILD_DIR} > /dev/null; "\
-        "java -Djava.security.policy=${RES_DIR}/java.policy"\
-                "-classpath \"${LIB_DIR}/*:.\""\
-                "Server.TCP.TCPMiddlewareResourceManager"\
-                "${@}"
-}
-
 # run code in tmux splits over ssh
 #-----------------------------------
 
-if [ "${TCP_OR_RMI}" == "RMI" ]; then
-    tmux new-session \; \
-        split-window -v \; \
-        split-window -h \; \
-        split-window -h \; \
-        select-pane -t 1 \; \
-        split-window -h \; \
-        select-pane -t 0 \; \
-        split-window -h \; \
-        select-pane -t 5 \; \
-        send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server Customer ${CUST_RM_PORT} "\
-                    "-cup ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 4 \; \
-        send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server Flight ${FLIGHT_RM_PORT} "\
-                    "-fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 3 \; \
-        send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server Car ${CAR_RM_PORT} "\
-                    "-cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 2 \; \
-        send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server Room ${ROOM_RM_PORT} "\
-                    "-rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT})\"" C-m \; \
-        select-pane -t 1 \; \
-        send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwp ${MID_RM_PORT} "\
-                    "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
-                    "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;
-fi
+tmux new-session \; \
+    split-window -v \; \
+    split-window -h \; \
+    split-window -h \; \
+    select-pane -t 1 \; \
+    split-window -h \; \
+    select-pane -t 0 \; \
+    split-window -h \; \
+    select-pane -t 5 \; \
+    send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server Customer ${CUST_RM_PORT} "\
+                "-cup ${CUST_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
+    select-pane -t 4 \; \
+    send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server Flight ${FLIGHT_RM_PORT} "\
+                "-fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
+    select-pane -t 3 \; \
+    send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server Car ${CAR_RM_PORT} "\
+                "-cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
+    select-pane -t 2 \; \
+    send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server Room ${ROOM_RM_PORT} "\
+                "-rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
+    select-pane -t 1 \; \
+    send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwp ${MID_RM_PORT} "\
+                "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
+                "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;

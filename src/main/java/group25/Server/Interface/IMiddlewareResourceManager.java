@@ -224,4 +224,6 @@ public interface IMiddlewareResourceManager extends Remote {
     public void shutdown()
         throws RemoteException;
 
+    public void receiveVote(int xid, boolean voteYes, String rmName)
+        throws RemoteException;
 }

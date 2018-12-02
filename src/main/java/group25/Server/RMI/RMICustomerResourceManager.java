@@ -26,19 +26,32 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
 
     private static int s_serverPort = 2003;
 
-    public RMICustomerResourceManager(String name) {
-        super(name, RMIUtils.DATA_FILE_PATH+"/customerData1.xml", RMIUtils.DATA_FILE_PATH+"/customerData2.xml", RMIUtils.DATA_FILE_PATH+"/customerMasterRecord.xml");
+    public RMICustomerResourceManager(String name, IMiddlewareResourceManager midRM) {
+        super(name, "customerData1.xml", "customerData2.xml", "customerMasterRecord.xml", "customerLogFile.txt", midRM);
     }
 
     public static void main(String args[]) {
         CliParser cliParser = new CliParser("RMICustomerResourceManager",args, new String[] {
-                CliParser.CUSTOMER_PORT
+                CliParser.CUSTOMER_PORT,
+                CliParser.MIDDLEWARE_HOSTNAME,
+                CliParser.MIDDLEWARE_PORT
         });
         if (cliParser.parsedArg(CliParser.CUSTOMER_PORT))
             s_serverPort = cliParser.getParsedPort(CliParser.CUSTOMER_PORT);
-
+        String middlewareHostname = null;
+        int middlewarePort = -1;
+        IMiddlewareResourceManager midRM = null;
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_HOSTNAME))
+            middlewareHostname = cliParser.getParsedHostname(CliParser.MIDDLEWARE_HOSTNAME);
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_PORT))
+            middlewarePort = cliParser.getParsedPort(CliParser.MIDDLEWARE_PORT);
+        if (middlewareHostname == null || middlewarePort == -1) {
+            // bad bad not good
+        } else {
+            midRM = RMIUtils.getRMIobject(middlewareHostname, middlewarePort, "MiddlewareServer");
+        }
         // Create a new Server object
-        RMICustomerResourceManager server = new RMICustomerResourceManager(s_serverName);
+        RMICustomerResourceManager server = new RMICustomerResourceManager(s_serverName, midRM);
 
         // Dynamically generate the stub (client proxy)
         ICustomerResourceManager resourceManager = RMIUtils.createRMIproxyObject(server,0);

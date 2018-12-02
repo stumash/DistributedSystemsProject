@@ -187,6 +187,10 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         return true;
     }
 
+    public void receiveVote(int xid, boolean voteYes, String rmName) {
+        transactionManager.receiveVote(xid, voteYes, rmName);
+    }
+
     public String getName() throws RemoteException, DeadlockException {
         return m_name;
     }

@@ -27,15 +27,17 @@ public class RMICarResourceManager extends CarResourceManager {
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
 
-    public RMICarResourceManager(String name) {
-        super(name, RMIUtils.DATA_FILE_PATH+"/carData1.xml", RMIUtils.DATA_FILE_PATH+"/carData2.xml", RMIUtils.DATA_FILE_PATH+"/carMasterRecord.xml");
+    public RMICarResourceManager(String name, IMiddlewareResourceManager midRM) {
+        super(name, "carData1.xml", "carData2.xml", "carMasterRecord.xml", "carLogFile.txt", midRM);
     }
 
     public static void main(String args[]) {
         CliParser cliParser = new CliParser("RMICarResourceManager", args, new String[]{
                 CliParser.CAR_PORT,
                 CliParser.CUSTOMER_HOSTNAME,
-                CliParser.CUSTOMER_PORT
+                CliParser.CUSTOMER_PORT,
+                CliParser.MIDDLEWARE_HOSTNAME,
+                CliParser.MIDDLEWARE_PORT
         });
         if (cliParser.parsedArg(CliParser.CAR_PORT))
             s_serverPort = cliParser.getParsedPort(CliParser.CAR_PORT);
@@ -43,9 +45,23 @@ public class RMICarResourceManager extends CarResourceManager {
             s_customerServerHostname = cliParser.getParsedHostname(CliParser.CUSTOMER_HOSTNAME);
         if (cliParser.parsedArg(CliParser.CUSTOMER_PORT))
             s_customerServerPort = cliParser.getParsedPort(CliParser.CUSTOMER_PORT);
+        
+        // get middleware for voting
+        String middlewareHostname = null;
+        int middlewarePort = -1;
+        IMiddlewareResourceManager midRM = null;
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_HOSTNAME))
+            middlewareHostname = cliParser.getParsedHostname(CliParser.MIDDLEWARE_HOSTNAME);
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_PORT))
+            middlewarePort = cliParser.getParsedPort(CliParser.MIDDLEWARE_PORT);
+        if (middlewareHostname == null || middlewarePort == -1) {
+            // bad bad not good
+        } else {
+            midRM = RMIUtils.getRMIobject(middlewareHostname, middlewarePort, "MiddlewareServer");
+        }
 
         // Create a new Server object
-        RMICarResourceManager server = new RMICarResourceManager(s_serverName);
+        RMICarResourceManager server = new RMICarResourceManager(s_serverName, midRM);
         server.customerRM = RMIUtils.getRMIobject(s_customerServerHostname, s_customerServerPort, "CustomerServer");
 
         // Dynamically generate the stub (client proxy)

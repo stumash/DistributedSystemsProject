@@ -1,7 +1,9 @@
 package group25.Server.Common;
 
 import group25.Server.Interface.*;
+import group25.Utils.CrashMode;
 import group25.Utils.XMLPersistor;
+import static group25.Utils.AnsiColors.RED;
 
 import java.util.*;
 import java.rmi.RemoteException;
@@ -11,19 +13,24 @@ public abstract class AbstractRMHashMapManager {
     private String m_name = "";
     protected RMHashMap globalState;
     protected HashMap<Integer, RMHashMap> transactionStates = new HashMap<>();
-    protected XMLPersistor xmlPersistor = new XMLPersistor(RMHashMap.class);
-    protected final String filename1, filename2, pointerFile;
+    protected XMLPersistor xmlPersistor = new XMLPersistor();
+    protected final String filename1, filename2, pointerFile, logFile;
     protected String currentCommitFile;
     protected FairWaitInterruptibleLock globalLock = new FairWaitInterruptibleLock();
+    protected IMiddlewareResourceManager middlewareRM;
+
+    private CrashMode crashMode = CrashMode.NO_CRASH;
 
     // TODO: give lock to correct transaction on wakeup from failure
-    public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile) {
-        System.out.println(pointerFile);
+    public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile, String logFile,
+            IMiddlewareResourceManager middlewareRM) {
         this.m_name = p_name;
         this.filename1 = filename1;
         this.filename2 = filename2;
         this.pointerFile = pointerFile;
-
+        this.logFile = logFile;
+        this.middlewareRM = middlewareRM;
+        
         currentCommitFile = xmlPersistor.readObject(pointerFile);
         if (currentCommitFile == null) {
             currentCommitFile = filename1;
@@ -33,15 +40,23 @@ public abstract class AbstractRMHashMapManager {
         }
     }
 
-    public boolean vote(int xid) throws RemoteException {
-        if (!transactionExists(xid)) return false;
+    public void crashResourceManager(CrashMode cm) {
+        if (cm.toString().substring(0,2).equals("TM")) {
+            System.out.println(RED.colorString("ERROR: ")+"Invalid crash mode for RM: "+cm.toString());
+            return;
+        }
+        crashMode = cm;
+    }
+
+    public void vote(int xid) throws RemoteException {
+        if (!transactionExists(xid)) middlewareRM.receiveVote(xid, false, this.m_name);
 
         // get global lock
         boolean gotLock = globalLock.lock(xid);
-        if (!gotLock) return false;
+        if (!gotLock) middlewareRM.receiveVote(xid, false, this.m_name);
 
         updateThenPersistGlobalState(xid);
-        return true;
+        middlewareRM.receiveVote(xid, true, this.m_name);
     }
 
     public boolean doCommit(int xid) throws RemoteException {
@@ -112,14 +127,10 @@ public abstract class AbstractRMHashMapManager {
 
             // write to file
             if  (currentCommitFile.equals(filename1)) {
-                System.out.println("commit file is " + filename1);
                 xmlPersistor.writeObject(globalState, filename2);
             } else if  (currentCommitFile.equals(filename2)) {
-                System.out.println("commit file is " + filename2);
                 xmlPersistor.writeObject(globalState, filename1);
-            } else {
-                System.out.println("fuck off");
-            }
+            } 
         }
     }
 
@@ -212,7 +223,9 @@ public abstract class AbstractRMHashMapManager {
     public String getName() throws RemoteException {
         return m_name;
     }
+
     public void shutdown() {
         System.exit(0);
     }
+    
 }

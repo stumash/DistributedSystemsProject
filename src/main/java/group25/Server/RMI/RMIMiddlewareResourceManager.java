@@ -58,13 +58,6 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
         // Create a new Server object
         RMIMiddlewareResourceManager server = new RMIMiddlewareResourceManager(s_serverName);
 
-        server.flightRM = RMIUtils.getRMIobject(s_flightServerHostname,s_flightServerPort,"FlightServer");
-        server.carRM = RMIUtils.getRMIobject(s_carServerHostname,s_carServerPort,"CarServer");
-        server.roomRM = RMIUtils.getRMIobject(s_roomServerHostname,s_roomServerPort,"RoomServer");
-        server.customerRM = RMIUtils.getRMIobject(s_customerServerHostname,s_customerServerPort,"CustomerServer");
-
-        server.transactionManager = new TransactionManager(server.carRM, server.flightRM, server.roomRM, server.customerRM);
-
         // Dynamically generate the stub (client proxy)
         IMiddlewareResourceManager resourceManager = RMIUtils.createRMIproxyObject(server,0);
 
@@ -80,6 +73,13 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
         }));
 
         System.out.println("'"+s_serverName+"' resource manager server ready and bound to '"+s_serverName+"'");
+
+        server.flightRM = RMIUtils.getRMIobject(s_flightServerHostname,s_flightServerPort,"FlightServer");
+        server.carRM = RMIUtils.getRMIobject(s_carServerHostname,s_carServerPort,"CarServer");
+        server.roomRM = RMIUtils.getRMIobject(s_roomServerHostname,s_roomServerPort,"RoomServer");
+        server.customerRM = RMIUtils.getRMIobject(s_customerServerHostname,s_customerServerPort,"CustomerServer");
+
+        server.transactionManager = new TransactionManager(server.carRM, server.flightRM, server.roomRM, server.customerRM);
 
         // Create and install a security manager
         if (System.getSecurityManager() == null) {

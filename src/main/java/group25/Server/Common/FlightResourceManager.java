@@ -12,8 +12,9 @@ public abstract class FlightResourceManager extends AbstractRMHashMapManager imp
     // NOTE: if flightPrice <= 0 and the flight already exists, it maintains its current price
     protected ICustomerResourceManager customerRM;
 
-    public FlightResourceManager(String p_name, String filename1, String filename2, String pointerFile) {
-        super(p_name, filename1, filename2, pointerFile);
+    public FlightResourceManager(String p_name, String filename1, String filename2, String pointerFile, String logFile,
+            IMiddlewareResourceManager middlwareRM) {
+        super(p_name, filename1, filename2, pointerFile, logFile, middlwareRM);
     }
 
     public boolean addFlight(int xid, int flightNum, int flightSeats, int flightPrice) throws RemoteException {
