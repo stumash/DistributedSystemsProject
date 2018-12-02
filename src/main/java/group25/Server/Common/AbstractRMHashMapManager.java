@@ -49,14 +49,37 @@ public abstract class AbstractRMHashMapManager {
     }
 
     public void vote(int xid) throws RemoteException {
-        if (!transactionExists(xid)) middlewareRM.receiveVote(xid, false, this.m_name);
-
-        // get global lock
-        boolean gotLock = globalLock.lock(xid);
-        if (!gotLock) middlewareRM.receiveVote(xid, false, this.m_name);
-
-        updateThenPersistGlobalState(xid);
-        middlewareRM.receiveVote(xid, true, this.m_name);
+        new Thread(() -> {
+            if (!transactionExists(xid)) {
+                try {
+                    middlewareRM.receiveVote(xid, false, this.m_name);
+                    return;
+                } catch (RemoteException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                return;
+            }
+    
+            // get global lock
+            boolean gotLock = globalLock.lock(xid);
+            if (!gotLock) {
+                try {
+                    middlewareRM.receiveVote(xid, false, this.m_name);
+                } catch (RemoteException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+    
+            updateThenPersistGlobalState(xid);
+            try {
+                middlewareRM.receiveVote(xid, true, this.m_name);
+            } catch (RemoteException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public boolean doCommit(int xid) throws RemoteException {

@@ -127,19 +127,18 @@ public class TransactionManager implements Remote
         }
 
         crashIf(CrashMode.TM_BEFORE_VOTE_REQUEST);
-        System.out.println("acquired it");
         synchronized(resourceManagers) {
-            resourceManagers = (ArrayList<Name_RM_Vote>)resourceManagers.clone();
+            for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                name_rm_vote.rm.vote(xid);
+            }
         }
-        for (Name_RM_Vote name_rm_vote : resourceManagers) {
-            name_rm_vote.rm.vote(xid);
-        }
-        System.out.println("released it");
+
         crashIf(CrashMode.TM_BEFORE_ANY_VOTE_REPLIES);
 
         Semaphore sem = new Semaphore(1);
         synchronized(voteReplyWaitMap) {
             voteReplyWaitMap.put(xid, sem);
+            System.out.println("getting semaphore " + voteReplyWaitMap.get(xid));
         }
         try {
             sem.acquire();
@@ -155,7 +154,10 @@ public class TransactionManager implements Remote
     }
     
     public void receiveVote(int xid, boolean voteYes, String rmName) {
-        Semaphore sem = voteReplyWaitMap.get(xid);
+        Semaphore sem = null;
+        synchronized(voteReplyWaitMap) {
+            sem = voteReplyWaitMap.get(xid);
+        }
         if (!voteYes) {
             System.out.println("vote no");
             try {
@@ -177,25 +179,18 @@ public class TransactionManager implements Remote
         synchronized(resourceManagerRecorder) {
             resourceManagers = resourceManagerRecorder.get(xid);
         }
-        System.out.println("got it!!!! " + resourceManagerRecorder);
 
         if (resourceManagers == null) {
             System.out.println("resource managers is null");
             return;
         }; // already aborted
 
-        boolean allYes = false;
-        System.out.println("about to go into the resourcemanagers");
         synchronized(resourceManagers) {
-            System.out.println("about to do more shit");
             int numRMs = resourceManagers.size();
-            System.out.println(xid + " used " + " numRMs " + numRMs);
             int yesCount = 0;
             for (Name_RM_Vote name_rm_vote : resourceManagers) {
                 if (name_rm_vote.rmName.equals(rmName)) {
-                    System.out.println("got the dudes vote");
                     if (voteYes) {
-                        System.out.println("voted yes");
                         name_rm_vote.votedYes = true;
                     }
                 }
@@ -204,26 +199,21 @@ public class TransactionManager implements Remote
                 }
             }
             if (yesCount == numRMs) {
-                System.out.println("all yesses");
-                allYes = true;
-            }
-            if (allYes) {
                 for (Name_RM_Vote name_rm_vote : resourceManagers) {
                     try {
-                        System.out.println("calling do commit");
+                        System.out.println("calling do commit on " + name_rm_vote.rmName);
                         name_rm_vote.rm.doCommit(xid);
                     } catch (RemoteException e) {
                         // TODO handle this
                         e.printStackTrace();
                     }
                 }
+                lockManager.UnlockAll(xid);
+                resourceManagerRecorder.remove(xid);
+                sem.release();
             }
         }
         //  ------------- HERE ENDS 2PC -------------
-        System.out.println("unlocking and releasing");
-        lockManager.UnlockAll(xid);
-        resourceManagerRecorder.remove(xid);
-        sem.release();
         return;
     }
 
