@@ -108,6 +108,7 @@ public abstract class AbstractRMHashMapManager {
                 System.out.println(GREEN.colorString("Voting yes."));
                 try {
                     middlewareRM.receiveVote(xid, true, this.m_name);
+                    crashIf(CrashMode.RM_AFTER_VOTING);
                     return;
                 } catch (InvalidTransactionException ite) {
                     System.out.println("TM says invalid transaction. Abort.");
@@ -121,6 +122,7 @@ public abstract class AbstractRMHashMapManager {
                         try {
                             System.out.println(GREEN.colorString("Try again to vote yes."));
                             middlewareRM.receiveVote(xid, true, this.m_name);
+                            crashIf(CrashMode.RM_AFTER_VOTING);
                             return;
                         } catch (InvalidTransactionException ite) {
                             System.out.println("Invalid transaction! Abort.");

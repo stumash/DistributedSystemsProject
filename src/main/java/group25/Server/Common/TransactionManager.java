@@ -179,7 +179,7 @@ public class TransactionManager implements Remote
             boolean receivedAllVotes = sem.tryAcquire(25, TimeUnit.SECONDS); // all participants must respond within 25 seconds
             if (!receivedAllVotes) {
                 System.out.println("Timed out waiting for votes. Aborting");
-                abort(xid, true);
+                abort(xid, false);
             }
         } catch (Exception e) { /* do nothing*/ }
 
@@ -205,57 +205,64 @@ public class TransactionManager implements Remote
                 // TODO log ABORT
                 System.out.println("Received NO vote from " + rmName + ". Aborting");
                 crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
-                abort(xid, true);
+                abort(xid, false);
                 return;
             } catch (InvalidTransactionException e) {
                 return;
             } catch (RemoteException e) { /* do nothing */ }
         }
-    
-        new Thread(() -> {
-            ArrayList<Name_RM_Vote> resourceManagers;
-            synchronized(resourceManagerRecorder) {
-                resourceManagers = resourceManagerRecorder.get(xid);
+       
+        ArrayList<Name_RM_Vote> resourceManagers;
+        synchronized(resourceManagerRecorder) {
+            resourceManagers = resourceManagerRecorder.get(xid);
+        }
+
+        int yesCount = 0;
+        int numRMs = 0;
+        synchronized(resourceManagers) {
+            numRMs = resourceManagers.size();
+            for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                if (name_rm_vote.rmName.equals(rmName)) {
+                    name_rm_vote.votedYes = true;
+                }
+                if (name_rm_vote.votedYes != null && name_rm_vote.votedYes) {
+                    yesCount++;
+                    if (yesCount == 2) {
+                        crashIf(CrashMode.TM_BEFORE_SOME_VOTE_REPLIES); // crash at second yesVote recieved
+                    }
+                }
             }
-    
+        }
+
+        final int yesCount2 = yesCount;
+        final int numRMs2 = numRMs;
+        new Thread(() -> {
             Semaphore sem = null; // this semaphore lets commit() complete
             synchronized(voteReplyWaitMap) {
                 sem = voteReplyWaitMap.get(xid);
             }
-    
-            synchronized(resourceManagers) {
-                int numRMs = resourceManagers.size();
-                int yesCount = 0;
-                for (Name_RM_Vote name_rm_vote : resourceManagers) {
-                    if (name_rm_vote.rmName.equals(rmName)) {
-                        name_rm_vote.votedYes = true;
-                    }
-                    if (name_rm_vote.votedYes != null && name_rm_vote.votedYes) {
-                        yesCount++;
-                        if (yesCount == 2) {
-                            crashIf(CrashMode.TM_BEFORE_SOME_VOTE_REPLIES); // crash at second yesVote recieved
-                        }
+
+            if (yesCount2 == numRMs2) {
+                System.out.println(GREEN.colorString("Success: ") + "received all yesses.");
+                crashIf(CrashMode.TM_BEFORE_DECIDING);
+                // TODO log COMMIT. 
+                // This is the point of no return.
+                synchronized(transactionAges) {
+                    // finally kill transaction state
+                    if (transactionAges.remove(xid) == null) {
+                        System.out.println("Transaction not found - Whoopsie");
+                        return; // probably shouldn't happen
                     }
                 }
-                if (yesCount == numRMs) {
-                    System.out.println(GREEN.colorString("Success: ") + "received all yesses.");
-                    crashIf(CrashMode.TM_BEFORE_DECIDING);
-                    // TODO log COMMIT. 
-                    // This is the point of no return.
-                    synchronized(transactionAges) {
-                        // finally kill transaction state
-                        if (transactionAges.remove(xid) == null) {
-                            System.out.println("Transaction not found - Whoopsie");
-                            return; // probably shouldn't happen
-                        }
-                    }
-                    crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
-    
+                crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
+
+                synchronized(resourceManagers) {
+
                     for (int i=0; i<resourceManagers.size(); i++) {
                         if (i == resourceManagers.size() - 1) {
                             crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
                         }
-    
+
                         Name_RM_Vote name_rm_vote = resourceManagers.get(i);
                         try {
                             name_rm_vote.rm.doCommit(xid);
@@ -288,13 +295,14 @@ public class TransactionManager implements Remote
                     sem.release();
                 }
             }
-            //  ------------- HERE ENDS 2PC -------------
-            return;
+        //  ------------- HERE ENDS 2PC -------------
+        return;
         }).start();
     }
 
   
     private boolean abort(int xid) throws InvalidTransactionException, RemoteException  {
+        if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
         ArrayList<Name_RM_Vote> resourceManagers = null;
         Semaphore sem = null;
 
