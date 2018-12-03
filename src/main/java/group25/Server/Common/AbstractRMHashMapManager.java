@@ -143,39 +143,43 @@ public abstract class AbstractRMHashMapManager {
     }
 
     public boolean doCommit(int xid) throws RemoteException {
-        System.out.println(getName() + " Committing");
-        crashIf(CrashMode.RM_AFTER_RECEIVING_DECISION);
-        // update pointer file
-        if (currentCommitFile.equals(filename1)) {
-            xmlPersistor.writeObject(filename2, pointerFile);
-            currentCommitFile = filename2;
-        } else {
-            xmlPersistor.writeObject(filename1, pointerFile);
-            currentCommitFile = filename1;
-        }
+        new Thread(() -> {
+            crashIf(CrashMode.RM_AFTER_RECEIVING_DECISION);
+            System.out.println(m_name + " Committing");
+            // update pointer file
+            if (currentCommitFile.equals(filename1)) {
+                xmlPersistor.writeObject(filename2, pointerFile);
+                currentCommitFile = filename2;
+            } else {
+                xmlPersistor.writeObject(filename1, pointerFile);
+                currentCommitFile = filename1;
+            }
 
-        // destroy transaction-specific state
-        removeTransactionState(xid);
+            // destroy transaction-specific state
+            removeTransactionState(xid);
 
-        // unlock
-        globalLock.unlock(xid);
-
+            // unlock
+            globalLock.unlock(xid);
+        }).start();
+        
         return true;
     }
 
     public boolean abort(int xid) throws RemoteException {
-        System.out.println(getName() + " aborting");
-        crashIf(CrashMode.RM_AFTER_RECEIVING_DECISION);
-        if (globalLock.getLockOwner() == xid) {
-            synchronized(globalState) {
+        new Thread(() -> {
+            System.out.println(m_name + " aborting");
+            crashIf(CrashMode.RM_AFTER_RECEIVING_DECISION);
+            if (globalLock.getLockOwner() == xid) {
+                synchronized(globalState) {
+                    removeTransactionState(xid);
+                    globalState = xmlPersistor.readObject(currentCommitFile);
+                    globalLock.unlock(xid);
+                }
+            } else {
                 removeTransactionState(xid);
-                globalState = xmlPersistor.readObject(currentCommitFile);
-                globalLock.unlock(xid);
+                globalLock.interruptWaiter(xid);
             }
-        } else {
-            removeTransactionState(xid);
-            globalLock.interruptWaiter(xid);
-        }
+        }).start();
         
         return true;
     }
