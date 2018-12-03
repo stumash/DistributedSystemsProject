@@ -51,6 +51,7 @@ public class CliParser {
     public static final String ROOM_PORT = Arg.ROOM.shortName+PORT_SHORT;
     public static final String CUSTOMER_HOSTNAME = Arg.CUSTOMER.shortName+HOSTNAME_SHORT;
     public static final String CUSTOMER_PORT = Arg.CUSTOMER.shortName+PORT_SHORT;
+    public static final String SHOULD_RECOVER = "recover";
 
     private String commandName;
     private Options options;
@@ -87,6 +88,13 @@ public class CliParser {
     }
 
     private Option optionFrom(String optString) {
+        if (optString.equals(SHOULD_RECOVER))
+            return Option
+                    .builder()
+                    .longOpt(SHOULD_RECOVER)
+                    .desc("should recover global state from files")
+                    .build();
+
         boolean hostnameNOTport = forHostnameNotPort(optString);
         Arg arg = Arg.fromShortName(optString.substring(0,optString.length()-1));
 

@@ -209,6 +209,65 @@ function run_rmi_middleware() {
 # run code in tmux splits over ssh
 #-----------------------------------
 
+if [ "${2}" == "--rm" ]; then
+    if [ -z "${3}" ]; then
+        echo "if --rm, then \$3 cannt but empty and must be one of [Customer, Flight, Car, Room, Mid]"
+        exit 1
+    fi
+    if [[ ! ( "${3}" =~ ^[Cc]ustomer|[Cc]ar|[Rr]oom|[Ff]light|[Mm]id$ ) ]]; then
+        echo "if --rm, then \$3 must be one of [Customer, Flight, Car, Room, Mid]"
+        exit 1
+    fi
+    if [ -n "${TMUX}" ]; then
+        case "${3}" in
+            [Cc]ustomer)
+                tmux select-pane -t 5\; \
+                send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server Customer ${CUST_RM_PORT} --recover "\
+                            "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \;
+                ;;
+            [Cc]ar)
+                tmux select-pane -t 3 \; \
+                send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server Car ${CAR_RM_PORT} --recover "\
+                            "-ch ${CAR_RM_HOST} -cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                            "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \;
+                ;;
+            [Rr]oom)
+                tmux select-pane -t 2 \; \
+                send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server Room ${ROOM_RM_PORT} --recover "\
+                            "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                            "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \;
+                ;;
+            [Ff]light)
+                tmux select-pane -t 4 \; \
+                send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server Flight ${FLIGHT_RM_PORT} --recover "\
+                            "-fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                            "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \;
+                ;;
+            [Mm]id)
+                tmux select-pane -t 1 \; \
+                send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} --recover "\
+                            "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT} "\
+                            "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
+                            "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;
+                ;;
+         esac
+    else
+        case "${3}" in
+            [Cc]ustomer)
+                ;;
+            [Cc]ar)
+                ;;
+            [Rr]oom)
+                ;;
+            [Ff]light)
+                ;;
+            [Mm]id)
+                ;;
+         esac
+    fi
+    exit 0
+fi
+
 tmux new-session \; \
     split-window -v \; \
     split-window -h \; \
@@ -219,20 +278,20 @@ tmux new-session \; \
     split-window -h \; \
     select-pane -t 5 \; \
     send-keys "ssh -t ${CUST_RM_HOST} \"$(run_rmi_server Customer ${CUST_RM_PORT} "\
-                "-cup ${CUST_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
+                "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
     select-pane -t 4 \; \
     send-keys "ssh -t ${FLIGHT_RM_HOST} \"$(run_rmi_server Flight ${FLIGHT_RM_PORT} "\
-                "-fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
                 "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
     select-pane -t 3 \; \
     send-keys "ssh -t ${CAR_RM_HOST} \"$(run_rmi_server Car ${CAR_RM_PORT} "\
-                "-cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-ch ${CAR_RM_HOST} -cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
                 "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
     select-pane -t 2 \; \
     send-keys "ssh -t ${ROOM_RM_HOST} \"$(run_rmi_server Room ${ROOM_RM_PORT} "\
-                "-rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
+                "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} "\
                 "-mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})\"" C-m \; \
     select-pane -t 1 \; \
-    send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwp ${MID_RM_PORT} "\
+    send-keys "ssh -t ${MID_RM_HOST} \"$(run_rmi_middleware ${MID_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT} "\
                 "-cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} "\
                 "-rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}\"" C-m \;

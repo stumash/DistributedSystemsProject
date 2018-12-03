@@ -4,6 +4,7 @@ import group25.Server.Interface.*;
 import group25.Server.LockManager.DeadlockException;
 import group25.Server.LockManager.LockManager;
 import group25.Server.LockManager.TransactionLockObject.LockType;
+import group25.Server.RMI.RMIUtils;
 import group25.Utils.CrashMode;
 import static group25.Utils.AnsiColors.RED;
 import static group25.Utils.AnsiColors.BLUE;
@@ -13,7 +14,6 @@ import static group25.Utils.AnsiColors.GREEN;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +52,27 @@ public class TransactionManager implements Remote
         this.customerRM = customerRM;
 
         setUpTimeToLiveThread();
+    }
+
+    public void reconnect(String rmName, String hostname, int port, String objName) throws RemoteException {
+        switch (rmName) {
+            case "car": {
+                carRM = RMIUtils.getRMIobject(hostname, port, objName);
+                break;
+            }
+            case "customer": {
+                customerRM = RMIUtils.getRMIobject(hostname, port, objName);
+                break;
+            }
+            case "flight": {
+                flightRM = RMIUtils.getRMIobject(hostname, port, objName);
+                break;
+            }
+            case "room": {
+                roomRM = RMIUtils.getRMIobject(hostname, port, objName);
+                break;
+            }
+        }
     }
 
     private void crashIf(CrashMode cm) {

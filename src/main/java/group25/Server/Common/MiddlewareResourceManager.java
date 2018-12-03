@@ -204,6 +204,10 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         transactionManager.crashResourceManager(rmName, mode);
     }
 
+    public void reconnect(String rmName, String hostname, int port, String objName) throws RemoteException {
+        transactionManager.reconnect(rmName, hostname, port, objName);
+    }
+
     @Override
     public void shutdown() {
         transactionManager.shutdownAllResourceManagers();

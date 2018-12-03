@@ -12,7 +12,6 @@ import java.util.*;
 import javax.transaction.InvalidTransactionException;
 
 import java.rmi.RemoteException;
-import java.io.*;
 
 public abstract class AbstractRMHashMapManager {
     private String m_name = "";

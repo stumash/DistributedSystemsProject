@@ -11,6 +11,7 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
 
     public static final String s_serverName = "MiddlewareServer";
 
+    private static String s_serverHostname = "localhost";
     private static int s_serverPort = 2005;
     private static String s_customerServerHostname = "localhost";
     private static int s_customerServerPort = 2003;
@@ -27,6 +28,7 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
 
     public static void main(String args[]) {
         CliParser cliParser = new CliParser("RMIMiddlewareResourceManager",args, new String[] {
+                CliParser.MIDDLEWARE_HOSTNAME,
                 CliParser.MIDDLEWARE_PORT,
                 CliParser.CUSTOMER_HOSTNAME,
                 CliParser.CUSTOMER_PORT,
@@ -37,6 +39,8 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
                 CliParser.CAR_HOSTNAME,
                 CliParser.CAR_PORT
         });
+        if (cliParser.parsedArg(CliParser.MIDDLEWARE_HOSTNAME))
+            s_serverHostname = cliParser.getParsedHostname(CliParser.MIDDLEWARE_HOSTNAME);
         if (cliParser.parsedArg(CliParser.MIDDLEWARE_PORT))
             s_serverPort = cliParser.getParsedPort(CliParser.MIDDLEWARE_PORT);
         if (cliParser.parsedArg(CliParser.CUSTOMER_HOSTNAME))

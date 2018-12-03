@@ -232,4 +232,7 @@ public interface IMiddlewareResourceManager extends Remote {
 
     public void crashResourceManager(String rmName, int mode)
         throws RemoteException;
+
+    public void reconnect(String rmName, String hostname, int port, String objName)
+        throws RemoteException;
 }
