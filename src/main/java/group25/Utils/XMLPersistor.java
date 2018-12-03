@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 
 import static group25.Utils.AnsiColors.RED;
@@ -20,8 +19,7 @@ import group25.Server.Common.*;
 
 public class XMLPersistor {
 
-    private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-    private final String DATA_FILE_PATH = (System.getProperty("user.home")) + "/comp512/DistributedSystemsProject/Data";
+    private final String DATA_FILE_PATH = (System.getProperty("user.home"));
 
     private XStream xstream;
 
@@ -43,7 +41,7 @@ public class XMLPersistor {
 
     public boolean writeObject(Object obj, String filename) {
         FileOutputStream fos = null;
-        File dataFile = new File(DATA_FILE_PATH+"/" + filename);
+        File dataFile = new File(DATA_FILE_PATH+"/"+filename);
         try {
             dataFile.getParentFile().mkdir();
             dataFile.createNewFile();

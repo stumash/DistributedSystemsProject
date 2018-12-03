@@ -254,14 +254,29 @@ if [ "${2}" == "--rm" ]; then
     else
         case "${3}" in
             [Cc]ustomer)
+                eval "$(run_rmi_server Customer ${CUST_RM_PORT} --recover \
+                    -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})"
                 ;;
             [Cc]ar)
+                eval "$(run_rmi_server Car ${CAR_RM_PORT} --recover \
+                    -ch ${CAR_RM_HOST} -cp ${CAR_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} \
+                    -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})"
                 ;;
             [Rr]oom)
+                eval "$(run_rmi_server Room ${ROOM_RM_PORT} --recover \
+                    -rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} \
+                    -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})"
                 ;;
             [Ff]light)
+                eval "$(run_rmi_server Flight ${FLIGHT_RM_PORT} --recover \
+                    -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} \
+                    -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT})"
                 ;;
             [Mm]id)
+                eval "$(run_rmi_middleware ${MID_RM_PORT} --recover \
+                    -mwh ${MID_RM_HOST} -mwp ${MID_RM_PORT} \
+                    -cuh ${CUST_RM_HOST} -cup ${CUST_RM_PORT} -fh ${FLIGHT_RM_HOST} -fp ${FLIGHT_RM_PORT} \
+                    -rh ${ROOM_RM_HOST} -rp ${ROOM_RM_PORT} -ch ${CAR_RM_HOST}) -cp ${CAR_RM_PORT}"
                 ;;
          esac
     fi
