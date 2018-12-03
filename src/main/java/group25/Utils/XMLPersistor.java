@@ -52,7 +52,6 @@ public class XMLPersistor {
             fos.write("<?xml version=\"1.0\"?>\n".getBytes("UTF-8")); // XStream doesn't do this for you
             byte[] data = objAsXML.getBytes("UTF-8");
             fos.write(data);
-            System.out.println("finished writing " + data);
         } catch (Exception e) {
             System.out.println(RED.colorString("XMLPersistor.writeObject() exception: ")+e.getMessage());
             System.exit(1);

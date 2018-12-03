@@ -18,7 +18,6 @@ public class FairWaitInterruptibleLock {
         synchronized(this) {
             xids.addLast(xid);
             xidToSemaphore.put(xid, new Semaphore(1));
-            System.out.println("getting xids in lock " + xids);
             try {
                 if (xids.peekFirst() != xid) {// not first in line
                     xidToSemaphore.get(xid).acquire();// next acquire() fails

@@ -68,6 +68,7 @@ public class TransactionManager implements Remote
             return;
         }
         crashMode = cm;
+        System.out.println("new crash mode" + crashMode);
     }
 
     public void crashResourceManager(String rmName, int mode) throws RemoteException {
@@ -153,57 +154,38 @@ public class TransactionManager implements Remote
             resourceManagers = resourceManagerRecorder.get(xid);    
         }
 
-        // TODO LOG Start-2PC
-
         crashIf(CrashMode.TM_BEFORE_VOTE_REQUEST);
         synchronized(resourceManagers) {
             for (Name_RM_Vote name_rm_vote : resourceManagers) {
                 try {
                     name_rm_vote.rm.vote(xid);
                 } catch (RemoteException e) {
-                    new Thread(() -> {
-                        long startTime = System.currentTimeMillis();
-                        boolean didVote = false;
-                        while (System.currentTimeMillis() - startTime < 20 * 1000) {
-                            try {
-                                name_rm_vote.rm.vote(xid);
-                                didVote = true;
-                                break;
-                            } catch (Exception ee) { 
-                                System.out.println("Vote call failed. Sending request again to " + name_rm_vote.rmName);
-                            }
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e1) {/* do nothing */ }
-                        }
-                        if (!didVote) {
-                            System.out.println("did not vote should abort");
-                            try {
-                                abort(xid, true);
-                            } catch (Exception ee) { /* do nothing */ }
-                        }
-                    }).start();
-                }   
-            }
+                    // if RM doesn't receive vote() call, it's down and therefore has lost all transaction state
+                    // So, just abort.
+                    System.out.println("Could not send vote request to " + name_rm_vote.rmName + ".Aborting.");
+                    abort(xid);
+                    return false;
+                }
+            }   
         }
-        // TODO test that this works
+        
         crashIf(CrashMode.TM_BEFORE_ANY_VOTE_REPLIES);
-
         Semaphore sem = new Semaphore(1);
         synchronized(voteReplyWaitMap) {
             voteReplyWaitMap.put(xid, sem);
         }
         try {
-            sem.acquire();
-            boolean receivedAllVotes = sem.tryAcquire(25, TimeUnit.SECONDS);
+            sem.acquire(); // wait to be awoken by receiveVote()
+            boolean receivedAllVotes = sem.tryAcquire(25, TimeUnit.SECONDS); // all participants must respond within 25 seconds
             if (!receivedAllVotes) {
-                System.out.println("Did not receive all votes");
+                System.out.println("Timed out waiting for votes. Aborting");
                 abort(xid, true);
             }
-        } catch (Exception e) { /* do nothing cuz wtf */ }
+        } catch (Exception e) { /* do nothing*/ }
+
         synchronized(voteReplyWaitMap) {
+            // if aborted at this point, map will not contain key xid
             if (!voteReplyWaitMap.containsKey(xid)) {
-                System.out.println("received a bad vote");
                 return false;
             } else {
                 return true;
@@ -211,134 +193,121 @@ public class TransactionManager implements Remote
         }
     }
     
-    public void receiveVote(int xid, boolean voteYes, String rmName) throws InvalidTransactionException {
+    public void receiveVote(int xid, boolean voteYes, String rmName) throws InvalidTransactionException {      
         synchronized(transactionAges) {
             if (transactionAges.get(xid) == null) {
                 throw new InvalidTransactionException();
             }
         }
-        // do this after receiving one vote request
-        // others will likely abort due to timeout
-        crashIf(CrashMode.TM_BEFORE_SOME_VOTE_REPLIES);
-        Semaphore sem = null;
-        synchronized(voteReplyWaitMap) {
-            sem = voteReplyWaitMap.get(xid);
-        }
+
         if (!voteYes) {
             try {
-                // TODO Log ABORT
+                // TODO log ABORT
+                System.out.println("Received NO vote from " + rmName + ". Aborting");
                 crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
                 abort(xid, true);
                 return;
             } catch (InvalidTransactionException e) {
                 return;
-            } catch (RemoteException e) {
-                // TODO handle this
-                e.printStackTrace();
+            } catch (RemoteException e) { /* do nothing */ }
+        }
+    
+        new Thread(() -> {
+            ArrayList<Name_RM_Vote> resourceManagers;
+            synchronized(resourceManagerRecorder) {
+                resourceManagers = resourceManagerRecorder.get(xid);
             }
-        }
-
-        ArrayList<Name_RM_Vote> resourceManagers;
-        synchronized(resourceManagerRecorder) {
-            resourceManagers = resourceManagerRecorder.get(xid);
-        }
-
-        if (resourceManagers == null) {
-            System.out.println("resource managers is null");
-            return;
-        }; // already aborted
-
-        synchronized(resourceManagers) {
-            int numRMs = resourceManagers.size();
-            int yesCount = 0;
-            for (Name_RM_Vote name_rm_vote : resourceManagers) {
-                if (name_rm_vote.rmName.equals(rmName)) {
-                    if (voteYes) {
+    
+            Semaphore sem = null; // this semaphore lets commit() complete
+            synchronized(voteReplyWaitMap) {
+                sem = voteReplyWaitMap.get(xid);
+            }
+    
+            synchronized(resourceManagers) {
+                int numRMs = resourceManagers.size();
+                int yesCount = 0;
+                for (Name_RM_Vote name_rm_vote : resourceManagers) {
+                    if (name_rm_vote.rmName.equals(rmName)) {
                         name_rm_vote.votedYes = true;
                     }
-                }
-                if (name_rm_vote.votedYes != null && name_rm_vote.votedYes) {
-                    yesCount++;
-                }
-            }
-            if (yesCount == numRMs) {
-                synchronized(transactionAges) {
-                    if (transactionAges.remove(xid) == null) {
-                        throw new InvalidTransactionException();
+                    if (name_rm_vote.votedYes != null && name_rm_vote.votedYes) {
+                        yesCount++;
+                        if (yesCount == 2) {
+                            crashIf(CrashMode.TM_BEFORE_SOME_VOTE_REPLIES); // crash at second yesVote recieved
+                        }
                     }
                 }
-                crashIf(CrashMode.TM_BEFORE_DECIDING);
-                // TODO Log YES
-                crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
-
-                for (int i=0; i<resourceManagers.size(); i++) {
-                    if (i == resourceManagers.size() - 1) {
-                        crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
+                if (yesCount == numRMs) {
+                    System.out.println(GREEN.colorString("Success: ") + "received all yesses.");
+                    crashIf(CrashMode.TM_BEFORE_DECIDING);
+                    // TODO log COMMIT. 
+                    // This is the point of no return.
+                    synchronized(transactionAges) {
+                        // finally kill transaction state
+                        if (transactionAges.remove(xid) == null) {
+                            System.out.println("Transaction not found - Whoopsie");
+                            return; // probably shouldn't happen
+                        }
                     }
-                    Name_RM_Vote name_rm_vote = resourceManagers.get(i);
-                    try {
+                    crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
+    
+                    for (int i=0; i<resourceManagers.size(); i++) {
+                        if (i == resourceManagers.size() - 1) {
+                            crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
+                        }
+    
+                        Name_RM_Vote name_rm_vote = resourceManagers.get(i);
                         try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException e) { /* do nothing */ }
-                        name_rm_vote.rm.doCommit(xid);
-                    } catch (RemoteException e) {
-                        new Thread(() -> {
-                            long startTime = System.currentTimeMillis();
-                            boolean commited = false;
-                            while (System.currentTimeMillis() - startTime < 20 * 1000) {
-                                try {
-                                    name_rm_vote.rm.doCommit(xid);
-                                    commited = true;
-                                    break;
-                                } catch (Exception ee) { 
-                                    System.out.println("Commit call failed. Sending request again to " + name_rm_vote.rmName);
+                            name_rm_vote.rm.doCommit(xid);
+                        } catch (RemoteException e) {
+                            System.out.println("Could not send commit decision to " + name_rm_vote.rmName + ". Sending commit decision again.");
+                            new Thread(() -> {
+                                long startTime = System.currentTimeMillis();
+                                boolean commited = false;
+                                while (System.currentTimeMillis() - startTime < 10 * 1000) {
+                                    try {
+                                        name_rm_vote.rm.doCommit(xid);
+                                        commited = true;
+                                        break;
+                                    } catch (RemoteException re) { 
+                                        System.out.println("Could not send commit decision to " + name_rm_vote.rmName + ". Sending commit decision again.");
+                                    }
+                                    try {
+                                        Thread.sleep(2000);
+                                    } catch (InterruptedException e1) { /* do nothing */ }
                                 }
-                                try {
-                                    Thread.sleep(2000);
-                                } catch (InterruptedException e1) {/* do nothing */ }
-                            }
-                            if (!commited) {
-                                System.out.println("Not able to call doCommit(), giving up");
-                            }
-                        }).start();
-                    } 
+                                if (!commited) {
+                                    System.out.println("Could not send commit decision to " + name_rm_vote + ". Giving up.");
+                                }
+                            }).start();
+                        } 
+                    }
+                    crashIf(CrashMode.TM_AFTER_SENDING_ALL_DECISIONS);
+                    lockManager.UnlockAll(xid);
+                    resourceManagerRecorder.remove(xid);
+                    sem.release();
                 }
-                crashIf(CrashMode.TM_AFTER_SENDING_ALL_DECISIONS);
-                lockManager.UnlockAll(xid);
-                resourceManagerRecorder.remove(xid);
-                sem.release();
             }
-        }
-        //  ------------- HERE ENDS 2PC -------------
-        return;
+            //  ------------- HERE ENDS 2PC -------------
+            return;
+        }).start();
     }
 
-    /**
-     * Abort transaction associated with xid by
-     * - unlocking all associated locks
-     * - restoring all data to associated beforeImages(s)
-     * 
-     * @param xid
-     */
+  
     private boolean abort(int xid) throws InvalidTransactionException, RemoteException  {
-        System.out.println("aborting");
         ArrayList<Name_RM_Vote> resourceManagers = null;
         Semaphore sem = null;
 
-        System.out.println("got trasnsctions aborting 2");
         synchronized(resourceManagerRecorder) {
             resourceManagers = resourceManagerRecorder.get(xid);
         }
-        System.out.println("about to get resource amnagers");
         synchronized(resourceManagers) {
-            System.out.println("size of resourceManagers " + resourceManagers.size());
             for (int i=0; i<resourceManagers.size(); i++) {
                 if (i == resourceManagers.size() - 1) {
                     crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
                 }
                 Name_RM_Vote name_rm_vote = resourceManagers.get(i);
                 try {
-                    System.out.println("calling abort ");
                     name_rm_vote.rm.abort(xid);
                 } catch (Exception e) {
                     System.out.println("abort call failed on " + name_rm_vote.rmName);
@@ -347,7 +316,7 @@ public class TransactionManager implements Remote
             crashIf(CrashMode.TM_AFTER_SENDING_ALL_DECISIONS);
         }
         synchronized(resourceManagerRecorder) {
-            resourceManagerRecorder.remove(xid);
+            resourceManagerRecorder.remove(xid); // this ensures that the commit call will return false
         }
         synchronized(voteReplyWaitMap) {
             sem = voteReplyWaitMap.get(xid);

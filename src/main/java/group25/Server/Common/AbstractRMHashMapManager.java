@@ -5,6 +5,7 @@ import group25.Utils.CrashMode;
 import group25.Utils.XMLPersistor;
 import static group25.Utils.AnsiColors.RED;
 import static group25.Utils.AnsiColors.BLUE;
+import static group25.Utils.AnsiColors.GREEN;
 
 import java.util.*;
 
@@ -62,78 +63,80 @@ public abstract class AbstractRMHashMapManager {
     }
 
     public void vote(int xid) throws RemoteException {
-        System.out.println(getName() + " Voting");
-        crashIf(CrashMode.RM_BEFORE_DECIDING_VOTE);
+        System.out.println(getName() + " got vote request.");
+
+        // do this all in a new thread since we want vote() to return immediately in the TM
         new Thread(() -> {
+            crashIf(CrashMode.RM_BEFORE_DECIDING_VOTE);
             if (!transactionExists(xid)) {
                 try {
-                    // TODO log ABORT maybe
+                    // TODO log abort
                     crashIf(CrashMode.RM_AFTER_DECIDING_VOTE);
+                    System.out.println("Transaction not found. Voting no.");
                     middlewareRM.receiveVote(xid, false, this.m_name);
-                    abort(xid);
                     crashIf(CrashMode.RM_AFTER_VOTING);
-                    return;
                 } catch (RemoteException e) {
-                    // TODO handle this
-                    e.printStackTrace();
+                    System.out.println("Could not send vote to TM");
                 }
                 return;
             }
     
-            // get global lock
             boolean gotLock = globalLock.lock(xid);
             if (!gotLock) {
                 try {
-                    // TODO log ABORT maybe
+                    // TODO log abort
                     crashIf(CrashMode.RM_AFTER_DECIDING_VOTE);
-                    new Thread(() -> {
-                        try {
-                            middlewareRM.receiveVote(xid, false, this.m_name);
-                        } catch (Exception e) { 
-                        }
-                    }).start();
-                    
                     abort(xid);
+                    System.out.println("Could not get global RM persistence lock. Voting no.");
+                    middlewareRM.receiveVote(xid, false, this.m_name);
                     crashIf(CrashMode.RM_AFTER_VOTING);
                 } catch (RemoteException e) {
-                    // TODO handle this
-                    e.printStackTrace();
+                    System.out.println("Could not send vote to TM");
                 }
+                return;
             }
             
+            // all good, we will vote YES
             updateThenPersistGlobalState(xid);
-                // TODO log YES
-                crashIf(CrashMode.RM_AFTER_DECIDING_VOTE);
-                new Thread(() -> {
+
+            // TODO log YES
+            crashIf(CrashMode.RM_AFTER_DECIDING_VOTE);
+
+            // uncertainty phase. Send Yes, and wait for decision
+            boolean sentVote = false;
+            new Thread(() -> {
+                System.out.println(GREEN.colorString("Voting yes."));
+                try {
+                    middlewareRM.receiveVote(xid, true, this.m_name);
+                    return;
+                } catch (InvalidTransactionException ite) {
+                    System.out.println("TM says invalid transaction. Abort.");
                     try {
-                        middlewareRM.receiveVote(xid, true, this.m_name);
-                    }
-                    catch (InvalidTransactionException ite) {
-                        System.out.println("Invalid transaction! Cannot vote.");
+                        abort(xid);
+                        return;
+                    } catch (RemoteException e) { /* can't happen, do nothing */ }
+                } catch (RemoteException re) {
+                    System.out.println("Could not send vote to Coordinator. Sending again.");
+                    while (true) { // keep sending indefinitely
                         try {
-                            abort(xid);
-                        } catch (RemoteException e) { }
-                    } catch (RemoteException e) {
-                        System.out.println("Could not send vote request to Coordinator. Sending again.");
-                        while (true) {
+                            System.out.println(GREEN.colorString("Try again to vote yes."));
+                            middlewareRM.receiveVote(xid, true, this.m_name);
+                            return;
+                        } catch (InvalidTransactionException ite) {
+                            System.out.println("Invalid transaction! Abort.");
                             try {
-                                middlewareRM.receiveVote(xid, true, this.m_name);
-                                break;
-                            } catch (InvalidTransactionException ee) {
-                                try {
-                                    abort(xid);
-                                    break;
-                                } catch (RemoteException e1) { }
-                            } catch (RemoteException eee) {
-                                System.out.println("Could not send vote request to Coordinator. Sending again.");
-                            }
-                            try {
+                                abort(xid);
+                                return;
+                            } catch (RemoteException e) { }
+                        } catch (RemoteException re2) {
+                            System.out.println("Could not send vote request to Coordinator. Sending again.");
+                        }
+                        try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e1) { /* do nothing */}
-                        }
                     }
-                }).start();
-                crashIf(CrashMode.RM_AFTER_VOTING);
+                }
+            }).start();
         }).start();
     }
 
