@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import javax.transaction.InvalidTransactionException;
 
@@ -60,12 +61,38 @@ public class TransactionManager implements Remote
         }
     }
 
-    public void crashMiddleware(CrashMode cm) {
+    public void crashMiddleware(int mode) {
+        CrashMode cm = CrashMode.values()[mode];
         if (cm.toString().substring(0,2).equals("RM")) {
             System.out.println(RED.colorString("Error: ")+"Invalid crash mode chosen for TM: "+cm.toString());
             return;
         }
         crashMode = cm;
+    }
+
+    public void crashResourceManager(String rmName, int mode) throws RemoteException {
+        CrashMode cm = CrashMode.values()[mode];
+        if (cm.toString().substring(0,2).equals("TM")) {
+            System.out.println(RED.colorString("Error: ")+"Invalid crash mode chosen for RM: "+cm.toString());
+            return;
+        }
+        switch(rmName) {
+            case "car":
+                ((IAbstractRMHashMapManager) carRM).crashResourceManager(cm);
+                break;
+            case "flight":
+                ((IAbstractRMHashMapManager) flightRM).crashResourceManager(cm);
+                break;
+            case "room":
+                ((IAbstractRMHashMapManager) roomRM).crashResourceManager(cm);
+                break;
+            case "customer":
+                ((IAbstractRMHashMapManager) customerRM).crashResourceManager(cm);
+                break;
+            default:
+                System.out.println(RED.colorString("Error: ")+"Invalid RM name in TransactionManager::crashResourceManager()");
+                break;
+        }
     }
 
     private void setUpTimeToLiveThread() {
@@ -115,7 +142,7 @@ public class TransactionManager implements Remote
 
     public synchronized boolean commit(int xid) throws InvalidTransactionException, RemoteException {
         synchronized(transactionAges) {
-            if (transactionAges.remove(xid) == null) {
+            if (transactionAges.get(xid) == null) {
                 throw new InvalidTransactionException();
             }
         }
@@ -126,26 +153,57 @@ public class TransactionManager implements Remote
             resourceManagers = resourceManagerRecorder.get(xid);    
         }
 
+        // TODO LOG Start-2PC
+
         crashIf(CrashMode.TM_BEFORE_VOTE_REQUEST);
         synchronized(resourceManagers) {
             for (Name_RM_Vote name_rm_vote : resourceManagers) {
-                name_rm_vote.rm.vote(xid);
+                try {
+                    name_rm_vote.rm.vote(xid);
+                } catch (RemoteException e) {
+                    new Thread(() -> {
+                        long startTime = System.currentTimeMillis();
+                        boolean didVote = false;
+                        while (System.currentTimeMillis() - startTime < 20 * 1000) {
+                            try {
+                                name_rm_vote.rm.vote(xid);
+                                didVote = true;
+                                break;
+                            } catch (Exception ee) { 
+                                System.out.println("Vote call failed. Sending request again to " + name_rm_vote.rmName);
+                            }
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e1) {/* do nothing */ }
+                        }
+                        if (!didVote) {
+                            System.out.println("did not vote should abort");
+                            try {
+                                abort(xid, true);
+                            } catch (Exception ee) { /* do nothing */ }
+                        }
+                    }).start();
+                }   
             }
         }
-
+        // TODO test that this works
         crashIf(CrashMode.TM_BEFORE_ANY_VOTE_REPLIES);
 
         Semaphore sem = new Semaphore(1);
         synchronized(voteReplyWaitMap) {
             voteReplyWaitMap.put(xid, sem);
-            System.out.println("getting semaphore " + voteReplyWaitMap.get(xid));
         }
         try {
             sem.acquire();
-            sem.acquire();
+            boolean receivedAllVotes = sem.tryAcquire(25, TimeUnit.SECONDS);
+            if (!receivedAllVotes) {
+                System.out.println("Did not receive all votes");
+                abort(xid, true);
+            }
         } catch (Exception e) { /* do nothing cuz wtf */ }
         synchronized(voteReplyWaitMap) {
             if (!voteReplyWaitMap.containsKey(xid)) {
+                System.out.println("received a bad vote");
                 return false;
             } else {
                 return true;
@@ -153,19 +211,24 @@ public class TransactionManager implements Remote
         }
     }
     
-    public void receiveVote(int xid, boolean voteYes, String rmName) {
+    public void receiveVote(int xid, boolean voteYes, String rmName) throws InvalidTransactionException {
+        synchronized(transactionAges) {
+            if (transactionAges.get(xid) == null) {
+                throw new InvalidTransactionException();
+            }
+        }
+        // do this after receiving one vote request
+        // others will likely abort due to timeout
+        crashIf(CrashMode.TM_BEFORE_SOME_VOTE_REPLIES);
         Semaphore sem = null;
         synchronized(voteReplyWaitMap) {
             sem = voteReplyWaitMap.get(xid);
         }
         if (!voteYes) {
-            System.out.println("vote no");
             try {
-                abort(xid);
-                synchronized(voteReplyWaitMap) {
-                    voteReplyWaitMap.remove(xid);
-                    sem.release();
-                }
+                // TODO Log ABORT
+                crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
+                abort(xid, true);
                 return;
             } catch (InvalidTransactionException e) {
                 return;
@@ -199,15 +262,48 @@ public class TransactionManager implements Remote
                 }
             }
             if (yesCount == numRMs) {
-                for (Name_RM_Vote name_rm_vote : resourceManagers) {
-                    try {
-                        System.out.println("calling do commit on " + name_rm_vote.rmName);
-                        name_rm_vote.rm.doCommit(xid);
-                    } catch (RemoteException e) {
-                        // TODO handle this
-                        e.printStackTrace();
+                synchronized(transactionAges) {
+                    if (transactionAges.remove(xid) == null) {
+                        throw new InvalidTransactionException();
                     }
                 }
+                crashIf(CrashMode.TM_BEFORE_DECIDING);
+                // TODO Log YES
+                crashIf(CrashMode.TM_BEFORE_SENDING_DECISION);
+
+                for (int i=0; i<resourceManagers.size(); i++) {
+                    if (i == resourceManagers.size() - 1) {
+                        crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
+                    }
+                    Name_RM_Vote name_rm_vote = resourceManagers.get(i);
+                    try {
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) { /* do nothing */ }
+                        name_rm_vote.rm.doCommit(xid);
+                    } catch (RemoteException e) {
+                        new Thread(() -> {
+                            long startTime = System.currentTimeMillis();
+                            boolean commited = false;
+                            while (System.currentTimeMillis() - startTime < 20 * 1000) {
+                                try {
+                                    name_rm_vote.rm.doCommit(xid);
+                                    commited = true;
+                                    break;
+                                } catch (Exception ee) { 
+                                    System.out.println("Commit call failed. Sending request again to " + name_rm_vote.rmName);
+                                }
+                                try {
+                                    Thread.sleep(2000);
+                                } catch (InterruptedException e1) {/* do nothing */ }
+                            }
+                            if (!commited) {
+                                System.out.println("Not able to call doCommit(), giving up");
+                            }
+                        }).start();
+                    } 
+                }
+                crashIf(CrashMode.TM_AFTER_SENDING_ALL_DECISIONS);
                 lockManager.UnlockAll(xid);
                 resourceManagerRecorder.remove(xid);
                 sem.release();
@@ -224,20 +320,56 @@ public class TransactionManager implements Remote
      * 
      * @param xid
      */
-    public boolean abort(int xid) throws InvalidTransactionException, RemoteException  {
-        synchronized(transactionAges) {
-            if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+    private boolean abort(int xid) throws InvalidTransactionException, RemoteException  {
+        System.out.println("aborting");
+        ArrayList<Name_RM_Vote> resourceManagers = null;
+        Semaphore sem = null;
+
+        System.out.println("got trasnsctions aborting 2");
+        synchronized(resourceManagerRecorder) {
+            resourceManagers = resourceManagerRecorder.get(xid);
+        }
+        System.out.println("about to get resource amnagers");
+        synchronized(resourceManagers) {
+            System.out.println("size of resourceManagers " + resourceManagers.size());
+            for (int i=0; i<resourceManagers.size(); i++) {
+                if (i == resourceManagers.size() - 1) {
+                    crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
+                }
+                Name_RM_Vote name_rm_vote = resourceManagers.get(i);
+                try {
+                    System.out.println("calling abort ");
+                    name_rm_vote.rm.abort(xid);
+                } catch (Exception e) {
+                    System.out.println("abort call failed on " + name_rm_vote.rmName);
+                }
+            }
+            crashIf(CrashMode.TM_AFTER_SENDING_ALL_DECISIONS);
         }
         synchronized(resourceManagerRecorder) {
-            ArrayList<Name_RM_Vote> resourceManagers = resourceManagerRecorder.get(xid);
-            for (Name_RM_Vote name_rm_vote : resourceManagers) {
-                name_rm_vote.rm.abort(xid);
-            }
             resourceManagerRecorder.remove(xid);
+        }
+        synchronized(voteReplyWaitMap) {
+            sem = voteReplyWaitMap.get(xid);
+            voteReplyWaitMap.remove(xid);
+            if (sem != null) {
+                sem.release();
+            }
         }
         lockManager.UnlockAll(xid);
         Trace.info("TransactionRM::abort("+xid+")");
         return true;
+    }
+
+    public boolean abort(int xid, boolean fromCommit) throws InvalidTransactionException, RemoteException {
+        if (fromCommit) {
+            return abort(xid);
+        } else {
+            synchronized(transactionAges) {
+                if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+            }
+            return abort(xid);
+        }
     }
 
     private void addResourceManagerToTransaction(int xid, IAbstractRMHashMapManager rm) throws RemoteException {
@@ -264,7 +396,7 @@ public class TransactionManager implements Remote
                 return flightRM.addFlight(xid, flightNum, flightSeats, flightPrice);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::addFlight("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::addFlight("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -284,7 +416,7 @@ public class TransactionManager implements Remote
                 return carRM.addCars(xid, location, numCars, price);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::addCars("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::addCars("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -304,7 +436,7 @@ public class TransactionManager implements Remote
                 return roomRM.addRooms(xid, location, numRooms, price);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::addRooms("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::addRooms("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -327,7 +459,7 @@ public class TransactionManager implements Remote
                 }
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::newCustomer("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::newCustomer("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -347,7 +479,7 @@ public class TransactionManager implements Remote
                 return customerRM.newCustomer(xid, cid);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::newCustomer("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::newCustomer("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -364,14 +496,14 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 if (flightRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
-                    abort(xid);
+                    abort(xid, false);
                     return false;
                 }
                 addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) flightRM);
                 return flightRM.deleteFlight(xid, flightNum);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::addFlight("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::deleteFlight("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -388,14 +520,14 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 if (carRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
-                    abort(xid);
+                    abort(xid, false);
                     return false;
                 }
                 addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) carRM);
                 return carRM.deleteCars(xid, location);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::deleteCars("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::deleteCars("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -412,14 +544,14 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 if (roomRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
-                    abort(xid);
+                    abort(xid, false);
                     return false;
                 }
                 addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) roomRM);
                 return roomRM.deleteRooms(xid, location);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::deleteRooms("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::deleteRooms("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -436,14 +568,14 @@ public class TransactionManager implements Remote
                 Trace.info("TransactionRM::lockManager.Lock("+xid+","+dataKey+","+LockType.LOCK_WRITE+") - Bad input!");
             } else {
                 if (customerRM.readData(xid, dataKey) == null) { // deleting an item that isn't there
-                    abort(xid);
+                    abort(xid, false);
                     return false;
                 }
                 addResourceManagerToTransaction(xid, (IAbstractRMHashMapManager) customerRM);
                 return customerRM.deleteCustomer(xid, customerID);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::deleteCustomer("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::deleteCustomer("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -464,7 +596,7 @@ public class TransactionManager implements Remote
             }
 
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryFlight("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryFlight("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -485,7 +617,7 @@ public class TransactionManager implements Remote
             }
 
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryCars("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryCars("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -506,7 +638,7 @@ public class TransactionManager implements Remote
             }
 
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryRooms("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryRooms("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -527,7 +659,7 @@ public class TransactionManager implements Remote
             }
 
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryCustomerInfo("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryCustomerInfo("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -547,7 +679,7 @@ public class TransactionManager implements Remote
                 return flightRM.queryFlightPrice(xid, flightNumber);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryFlightPrice("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryFlightPrice("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -567,7 +699,7 @@ public class TransactionManager implements Remote
                 return carRM.queryCarsPrice(xid, location);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryCarsPrice("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryCarsPrice("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -587,7 +719,7 @@ public class TransactionManager implements Remote
                 return roomRM.queryRoomsPrice(xid, location);
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::queryRoomsPrice("+xid+","+dataKey+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::queryRoomsPrice("+xid+","+dataKey+") - DeadlockException!");
         }
@@ -611,7 +743,7 @@ public class TransactionManager implements Remote
                 return flightRM.reserveFlight(xid, customerID, flightNumber);  // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::reserveFlight("+xid+","+dataKeyFlight+","+dataKeyCustomer+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::reserveFlight("+xid+","+dataKeyFlight+","+dataKeyCustomer+") - DeadlockException!");
         }
@@ -635,7 +767,7 @@ public class TransactionManager implements Remote
                 return carRM.reserveCar(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::reserveCar("+xid+","+dataKeyCar+","+dataKeyCustomer+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::reserveCar("+xid+","+dataKeyCar+","+dataKeyCustomer+") - DeadlockException!");
         }
@@ -659,7 +791,7 @@ public class TransactionManager implements Remote
                 return roomRM.reserveRoom(xid, customerID, location); // TODO: reserveXXX() methods SHOULD ABORT ON FAILURE!!!
             }
         } catch (DeadlockException e) {
-            abort(xid);
+            abort(xid, false);
             Trace.info("TransactionRM::reserveRoom("+xid+","+dataKeyRoom+","+dataKeyCustomer+") - DeadlockException!");
             throw new DeadlockException(xid, "TransactionRM::reserveRoom("+xid+","+dataKeyRoom+","+dataKeyCustomer+") - DeadlockException!");
         }

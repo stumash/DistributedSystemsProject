@@ -33,6 +33,10 @@ public enum Command {
 
     Bundle("Book N flight numbers, and optionally a room and/or car at a location", "<xid>,<CustomerID>,<FlightNumber1>...<FlightNumberN>,<Location>,<Car-Y/N>,<Room-Y/N>"),
 
+    CrashMiddleware("Crash the middleware with a specified mode", "<mode>"),
+    CrashResourceManager("Crash a resource manager with a specified mode", "<rmName=(car,flight,room,customer)>,<mode>"),
+    ResetCrashes("Reset crashes", ""),
+    
     Shutdown("Shutdown all servers", ""),
     Quit("Exit the client application", "");
 

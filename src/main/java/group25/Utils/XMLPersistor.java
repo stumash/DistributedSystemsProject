@@ -79,7 +79,6 @@ public class XMLPersistor {
 
             fis.read(data);
             str = new String(data, "UTF-8");
-            System.out.println(str);
         } catch (Exception e) {
             return null; // file not found
         }

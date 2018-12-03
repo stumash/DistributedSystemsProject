@@ -4,6 +4,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import group25.Server.Common.RMItem;
+import group25.Utils.CrashMode;
 
 public interface IAbstractRMHashMapManager extends Remote {
     public RMItem readData(int xid, String key) throws RemoteException;
@@ -19,4 +20,6 @@ public interface IAbstractRMHashMapManager extends Remote {
     public boolean abort(int xid) throws RemoteException;
 
     public String getName() throws RemoteException;
+
+	public void crashResourceManager(CrashMode cm) throws RemoteException;
 }

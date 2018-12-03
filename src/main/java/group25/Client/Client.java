@@ -1,5 +1,6 @@
 package group25.Client;
 
+import group25.Server.Interface.IAbstractRMHashMapManager;
 import group25.Server.Interface.IMiddlewareResourceManager;
 import group25.Server.LockManager.DeadlockException;
 import static group25.Utils.AnsiColors.*;
@@ -172,6 +173,18 @@ public abstract class Client {
 
                 System.out.println("Quitting client");
                 System.exit(0);
+                break;
+            }
+            case CrashMiddleware: {
+                crashMiddleware(arguments);
+                break;
+            }
+            case CrashResourceManager: {
+                crashResourceManager(arguments);
+                break;
+            }
+            case ResetCrashes: {
+                resetCrashes(arguments);
                 break;
             }
         }
@@ -551,6 +564,33 @@ public abstract class Client {
         } else {
             System.out.println("Bundle could not be reserved");
         }
+    }
+
+    private void crashMiddleware(Vector<String> arguments) throws RemoteException {
+        checkArgumentsCount(2, arguments.size());
+
+        int mode = toInt(arguments.get(1));
+        m_resourceManager.crashMiddleware(mode);
+        System.out.println("Set middleware crash mode to " + mode);
+    }
+
+    private void crashResourceManager(Vector<String> arguments) throws RemoteException {
+        checkArgumentsCount(3, arguments.size());
+
+        int mode = toInt(arguments.get(2));
+        String rmName = arguments.get(1);
+        m_resourceManager.crashResourceManager(rmName, mode);
+        System.out.println("Set " + rmName + " resource manager crash mode to " + mode);
+    }
+
+    private void resetCrashes(Vector<String> arguments) throws RemoteException {
+        checkArgumentsCount(1, arguments.size());
+
+        m_resourceManager.crashMiddleware(0);
+        m_resourceManager.crashResourceManager("car", 0);
+        m_resourceManager.crashResourceManager("customer", 0);
+        m_resourceManager.crashResourceManager("flight", 0);
+        m_resourceManager.crashResourceManager("room", 0);
     }
 
     private static Vector<String> parse(String command) {

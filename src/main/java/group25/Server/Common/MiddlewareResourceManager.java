@@ -9,6 +9,7 @@ import javax.transaction.InvalidTransactionException;
 
 import java.rmi.RemoteException;
 import group25.Server.LockManager.*;
+import group25.Utils.CrashMode;
 
 public abstract class MiddlewareResourceManager implements IMiddlewareResourceManager {
     protected ICarResourceManager carRM;
@@ -32,7 +33,7 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
     }
 
     public boolean abort(int xid) throws RemoteException, InvalidTransactionException {
-        return transactionManager.abort(xid);
+        return transactionManager.abort(xid, false);
     }
 
     // Create a new flight, or add seats to existing flight
@@ -163,7 +164,7 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         for (int flightNumber : flightNumbers) {
             boolean flightReserved = transactionManager.reserveFlight(xid, customerID, flightNumber);
             if (!flightReserved) {
-                transactionManager.abort(xid);
+                transactionManager.abort(xid, false);
                 return false;
             }
         }
@@ -171,7 +172,7 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         if (car) {
             boolean carReserved = transactionManager.reserveCar(xid, customerID, location);
             if (!carReserved) {
-                transactionManager.abort(xid);
+                transactionManager.abort(xid, false);
                 return false;
             }
         }
@@ -179,7 +180,7 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         if (room) {
             boolean roomReserved = transactionManager.reserveRoom(xid, customerID, location);
             if (!roomReserved) {
-                transactionManager.abort(xid);
+                transactionManager.abort(xid, false);
                 return false;
             }
         }
@@ -187,12 +188,20 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         return true;
     }
 
-    public void receiveVote(int xid, boolean voteYes, String rmName) {
+    public void receiveVote(int xid, boolean voteYes, String rmName) throws InvalidTransactionException, RemoteException {
         transactionManager.receiveVote(xid, voteYes, rmName);
     }
 
     public String getName() throws RemoteException, DeadlockException {
         return m_name;
+    }
+
+    public void crashMiddleware(int mode) throws RemoteException {
+        transactionManager.crashMiddleware(mode);
+    }
+
+    public void crashResourceManager(String rmName, int mode) throws RemoteException {
+        transactionManager.crashResourceManager(rmName, mode);
     }
 
     @Override

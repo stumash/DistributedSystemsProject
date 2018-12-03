@@ -4,6 +4,7 @@ import group25.Server.Interface.*;
 import group25.Server.Common.*;
 import group25.Utils.CliParser;
 
+import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 
 public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
@@ -86,4 +87,5 @@ public class RMIMiddlewareResourceManager extends MiddlewareResourceManager {
             System.setSecurityManager(new SecurityManager());
         }
     }
+
 }

@@ -226,4 +226,10 @@ public interface IMiddlewareResourceManager extends Remote {
 
     public void receiveVote(int xid, boolean voteYes, String rmName)
         throws RemoteException;
+
+    public void crashMiddleware(int mode)
+        throws RemoteException;
+
+    public void crashResourceManager(String rmName, int mode)
+        throws RemoteException;
 }
