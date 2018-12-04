@@ -36,6 +36,7 @@ public class TransactionManager implements Remote
     private CrashMode crashMode = CrashMode.NO_CRASH;
 
     private HashMap<Integer, ArrayList<Name_RM_Vote>> resourceManagerRecorder = new HashMap<>();
+    private ArrayList<Integer> commitedTransactions = new ArrayList<>();
 
     private HashMap<Integer, Long> transactionAges = new HashMap<>();
 
@@ -52,6 +53,10 @@ public class TransactionManager implements Remote
         this.customerRM = customerRM;
 
         setUpTimeToLiveThread();
+    }
+
+    public boolean commited(int xid) {
+        return commitedTransactions.contains(xid);
     }
 
     public void reconnect(String rmName, String hostname, int port, String objName) throws RemoteException {
@@ -197,7 +202,7 @@ public class TransactionManager implements Remote
         }
         try {
             sem.acquire(); // wait to be awoken by receiveVote()
-            boolean receivedAllVotes = sem.tryAcquire(25, TimeUnit.SECONDS); // all participants must respond within 25 seconds
+            boolean receivedAllVotes = sem.tryAcquire(30, TimeUnit.SECONDS); // all participants must respond within 25 seconds
             if (!receivedAllVotes) {
                 System.out.println("Timed out waiting for votes. Aborting");
                 abort(xid, false);
@@ -284,6 +289,8 @@ public class TransactionManager implements Remote
                             crashIf(CrashMode.TM_BEFORE_SENDING_LAST_DECISION);                    
                         }
 
+                        commitedTransactions.add(xid);
+
                         Name_RM_Vote name_rm_vote = resourceManagers.get(i);
                         try {
                             name_rm_vote.rm.doCommit(xid);
@@ -292,8 +299,9 @@ public class TransactionManager implements Remote
                             new Thread(() -> {
                                 long startTime = System.currentTimeMillis();
                                 boolean commited = false;
-                                while (System.currentTimeMillis() - startTime < 10 * 1000) {
+                                while (System.currentTimeMillis() - startTime < 30 * 1000) {
                                     try {
+                                        name_rm_vote.rm = rmFromRMName(name_rm_vote.rmName);
                                         name_rm_vote.rm.doCommit(xid);
                                         commited = true;
                                         break;
@@ -364,7 +372,7 @@ public class TransactionManager implements Remote
             return abort(xid);
         } else {
             synchronized(transactionAges) {
-                if (transactionAges.remove(xid) == null) throw new InvalidTransactionException();
+                if (transactionAges.get(xid) == null) throw new InvalidTransactionException();
             }
             return abort(xid);
         }
@@ -825,35 +833,23 @@ public class TransactionManager implements Remote
         }
         return true;
     }
-}
 
-class BeforeImage {
-    IAbstractRMHashMapManager rm;
-    String dataKey;
-    RMItem rItem;
-
-    BeforeImage(IAbstractRMHashMapManager rm, String dataKey, RMItem rItem) {
-        this.rm = rm;
-        this.dataKey = dataKey;
-        this.rItem = rItem;
-    }
-
-    void restore(int xid) throws RemoteException {
-        if (rItem == null) {
-            rm.removeData(xid, dataKey);
-        } else {
-            rm.writeData(xid, dataKey, rItem);
+    private IAbstractRMHashMapManager rmFromRMName(String rmName) {
+        switch (rmName) {
+            case "CarSever": {
+                return carRM;
+            }
+            case "RoomServer": {
+                return roomRM;
+            }
+            case "FlightServer": {
+                return flightRM;
+            }
+            case "CustomerServer": {
+                return customerRM;
+            }
         }
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof BeforeImage)) {
-            return false;
-        }
-        BeforeImage bOther = (BeforeImage) other;
-        boolean isEqual = bOther.dataKey.equals(this.dataKey);
-        return isEqual;
+        return null;
     }
 }
 

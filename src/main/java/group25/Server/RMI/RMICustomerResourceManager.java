@@ -32,7 +32,7 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
     private static boolean should_recover = false;
 
     public RMICustomerResourceManager(String name, IMiddlewareResourceManager midRM) {
-        super(name, "customerData1.xml", "customerData2.xml", "customerMasterRecord.xml", "customerLogFile.txt", midRM);
+        super(name, "customerData1.xml", "customerData2.xml", "customerMasterRecord.xml", "customerLogFile.xml", midRM);
     }
 
     public static void main(String args[]) {
@@ -84,9 +84,11 @@ public class RMICustomerResourceManager extends CustomerResourceManager {
             System.setSecurityManager(new SecurityManager());
         }
 
-        // TODO: recover state
         if (should_recover) {
+            server.recover();
             System.out.println(BLUE.colorString("recovering state from files"));
+        } else {
+            // delete files?
         }
 
         // for recovery, force middleware to reconnect to carRM

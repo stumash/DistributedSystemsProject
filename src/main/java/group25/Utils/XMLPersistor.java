@@ -80,7 +80,13 @@ public class XMLPersistor {
             return null; // file not found
         }
 
-        return (T)this.xstream.fromXML(str);
+        T retval = null;
+        try {
+            retval = (T) this.xstream.fromXML(str);
+        } catch (Exception e) {
+        }
+
+        return retval;
     }
     
     public ObjectOutputStream getWriteAppendStream(String filepath) {

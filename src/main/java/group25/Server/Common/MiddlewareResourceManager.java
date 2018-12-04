@@ -188,6 +188,10 @@ public abstract class MiddlewareResourceManager implements IMiddlewareResourceMa
         return true;
     }
 
+    public boolean commited(int xid) {
+        return transactionManager.commited(xid);
+    }
+
     public void receiveVote(int xid, boolean voteYes, String rmName) throws InvalidTransactionException, RemoteException {
         transactionManager.receiveVote(xid, voteYes, rmName);
     }

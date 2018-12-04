@@ -235,4 +235,7 @@ public interface IMiddlewareResourceManager extends Remote {
 
     public void reconnect(String rmName, String hostname, int port, String objName)
         throws RemoteException;
+
+    public boolean commited(int xid)
+        throws RemoteException;
 }

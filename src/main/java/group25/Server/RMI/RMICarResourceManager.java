@@ -37,7 +37,7 @@ public class RMICarResourceManager extends CarResourceManager {
     private static boolean should_recover = false;
 
     public RMICarResourceManager(String name, IMiddlewareResourceManager midRM) {
-        super(name, "carData1.xml", "carData2.xml", "carMasterRecord.xml", "carLogFile.txt", midRM);
+        super(name, "carData1.xml", "carData2.xml", "carMasterRecord.xml", "carLogFile.xml", midRM);
     }
 
     public static void main(String args[]) {
@@ -93,9 +93,12 @@ public class RMICarResourceManager extends CarResourceManager {
 
         System.out.println("'" + s_serverName + "' resource manager server ready and bound to '" + s_serverName + "'");
 
-        // TODO: recover state
+        // recover state
         if (should_recover) {
+            server.recover();
             System.out.println(BLUE.colorString("recovering state from files"));
+        } else {
+            // delete files?
         }
 
         // for recovery, force middleware to reconnect to carRM

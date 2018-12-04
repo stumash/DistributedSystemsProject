@@ -31,7 +31,7 @@ public class RMIRoomResourceManager extends RoomResourceManager {
     private static boolean should_recover = false;
 
     public RMIRoomResourceManager(String name, IMiddlewareResourceManager midRM) {
-        super(name, "roomData1.xml", "roomData2.xml", "roomMasterRecord.xml", "roomLogFile.txt", midRM);
+        super(name, "roomData1.xml", "roomData2.xml", "roomMasterRecord.xml", "roomLogFile.xml", midRM);
     }
 
     public static void main(String args[]) {
@@ -85,9 +85,11 @@ public class RMIRoomResourceManager extends RoomResourceManager {
 
         System.out.println("'"+s_serverName+"' resource manager server ready and bound to '"+s_serverName+"'");
 
-        // TODO: recover state
         if (should_recover) {
+            server.recover();
             System.out.println(BLUE.colorString("recovering state from files"));
+        } else {
+            // delete files?
         }
 
         // for recovery, force middleware to reconnect to carRM

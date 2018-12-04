@@ -29,7 +29,7 @@ public class RMIFlightResourceManager extends FlightResourceManager {
     private static boolean should_recover = false;
 
     public RMIFlightResourceManager(String name, IMiddlewareResourceManager midRM) {
-        super(name, "flightData1.xml", "flightData2.xml", "flightMasterRecord.xml", "flightLogFile.txt", midRM);
+        super(name, "flightData1.xml", "flightData2.xml", "flightMasterRecord.xml", "flightLogFile.xml", midRM);
     }
 
     public static void main(String args[]) {
@@ -88,9 +88,11 @@ public class RMIFlightResourceManager extends FlightResourceManager {
             System.setSecurityManager(new SecurityManager());
         }
 
-        // TODO: recover state
         if (should_recover) {
+            server.recover();
             System.out.println(BLUE.colorString("recovering global state from files"));
+        } else {
+            // delete files?
         }
 
         // for recovery, force middleware to reconnect to carRM

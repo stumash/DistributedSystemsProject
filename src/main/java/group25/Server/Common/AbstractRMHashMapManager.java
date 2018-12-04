@@ -15,7 +15,7 @@ import java.rmi.RemoteException;
 
 public abstract class AbstractRMHashMapManager {
     private String m_name = "";
-    protected RMHashMap globalState;
+    protected RMHashMap globalState = new RMHashMap();
     protected HashMap<Integer, RMHashMap> transactionStates = new HashMap<>();
     protected XMLPersistor xmlPersistor = new XMLPersistor();
     protected final String filename1, filename2, pointerFile, logFile;
@@ -25,7 +25,6 @@ public abstract class AbstractRMHashMapManager {
 
     private CrashMode crashMode = CrashMode.NO_CRASH;
 
-    // TODO: give lock to correct transaction on wakeup from failure
     public AbstractRMHashMapManager(String p_name, String filename1, String filename2, String pointerFile, String logFile,
             IMiddlewareResourceManager middlewareRM) {
         this.m_name = p_name;
@@ -34,13 +33,37 @@ public abstract class AbstractRMHashMapManager {
         this.pointerFile = pointerFile;
         this.logFile = logFile;
         this.middlewareRM = middlewareRM;
-        
+        this.currentCommitFile = filename2;
+    }
+
+    public void recover() {
         currentCommitFile = xmlPersistor.readObject(pointerFile);
         if (currentCommitFile == null) {
-            currentCommitFile = filename1;
+            currentCommitFile = filename2; // first commit should be to other file, filename1
             globalState = new RMHashMap();
         } else {
             globalState = xmlPersistor.readObject(currentCommitFile);
+        }
+
+        Integer transactionVotedYes = xmlPersistor.readObject(logFile);
+        if (transactionVotedYes != null && transactionVotedYes != -1) {
+            int xid = transactionVotedYes;
+            String workingFile = currentCommitFile.equals(filename1)? filename2: filename1;
+            transactionStates.put(xid, xmlPersistor.readObject(workingFile));
+            globalLock.lock(xid);
+            try {
+                if (middlewareRM.commited(xid)) {
+                    System.out.println("middleware says to commit recovered transaction so committing");
+                    doCommit(xid);
+                } else {
+                    System.out.println("middleware doesn't know about transaction so aborting");
+                    abort(xid);
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to complete recovery on doCommit/abort "+xid);
+            }
+        } else {
+            System.out.println("did not record voting yes");
         }
     }
 
@@ -63,6 +86,7 @@ public abstract class AbstractRMHashMapManager {
 
     public void vote(int xid) throws RemoteException {
         System.out.println(getName() + " got vote request.");
+        xmlPersistor.writeObject(-1, logFile);
 
         // do this all in a new thread since we want vote() to return immediately in the TM
         new Thread(() -> {
@@ -99,6 +123,7 @@ public abstract class AbstractRMHashMapManager {
             updateThenPersistGlobalState(xid);
 
             // TODO log YES
+            xmlPersistor.writeObject(xid, logFile);
             crashIf(CrashMode.RM_AFTER_DECIDING_VOTE);
 
             // uncertainty phase. Send Yes, and wait for decision
@@ -107,6 +132,7 @@ public abstract class AbstractRMHashMapManager {
                 System.out.println(GREEN.colorString("Voting yes."));
                 try {
                     middlewareRM.receiveVote(xid, true, this.m_name);
+                    xmlPersistor.writeObject(xid, logFile);
                     crashIf(CrashMode.RM_AFTER_VOTING);
                     return;
                 } catch (InvalidTransactionException ite) {
@@ -121,6 +147,7 @@ public abstract class AbstractRMHashMapManager {
                         try {
                             System.out.println(GREEN.colorString("Try again to vote yes."));
                             middlewareRM.receiveVote(xid, true, this.m_name);
+                            xmlPersistor.writeObject(xid, logFile);
                             crashIf(CrashMode.RM_AFTER_VOTING);
                             return;
                         } catch (InvalidTransactionException ite) {
@@ -154,6 +181,8 @@ public abstract class AbstractRMHashMapManager {
                 currentCommitFile = filename1;
             }
 
+            xmlPersistor.writeObject(-1, logFile);
+
             // destroy transaction-specific state
             removeTransactionState(xid);
 
@@ -166,6 +195,7 @@ public abstract class AbstractRMHashMapManager {
 
     public boolean abort(int xid) throws RemoteException {
         new Thread(() -> {
+            xmlPersistor.writeObject(-1, logFile);
             System.out.println(m_name + " aborting");
             crashIf(CrashMode.RM_AFTER_RECEIVING_DECISION);
             if (globalLock.getLockOwner() == xid) {
@@ -229,7 +259,10 @@ public abstract class AbstractRMHashMapManager {
         }
     }
 
-    public RMItem readData(int xid, String key) {
+    public RMItem readData(int xid, String key) throws UnsupportedOperationException {
+        if (globalLock.getLockOwner() == xid)
+            throw new UnsupportedOperationException();
+
         RMHashMap m_data = getTransactionState(xid);
         if (m_data == null) {
             synchronized(globalState) {
@@ -249,7 +282,10 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Writes a data item
-    public void writeData(int xid, String key, RMItem value) {
+    public void writeData(int xid, String key, RMItem value) throws UnsupportedOperationException {
+        if (globalLock.getLockOwner() == xid)
+            throw new UnsupportedOperationException();
+
         RMHashMap m_data = getTransactionState(xid);
         if (m_data == null) {
             synchronized(globalState) {
@@ -272,7 +308,10 @@ public abstract class AbstractRMHashMapManager {
         }
     }
 
-    public boolean deleteItem(int xid, String key) {
+    public boolean deleteItem(int xid, String key) throws UnsupportedOperationException {
+        if (globalLock.getLockOwner() == xid)
+            throw new UnsupportedOperationException();
+
         Trace.info("RM::deleteItem(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         // Check if there is such an item in the storage
@@ -292,7 +331,7 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Query the number of available seats/rooms/cars
-    public int queryNum(int xid, String key) {
+    public int queryNum(int xid, String key) throws UnsupportedOperationException {
         Trace.info("RM::queryNum(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         int value = 0;
@@ -304,7 +343,7 @@ public abstract class AbstractRMHashMapManager {
     }
 
     // Query the price of an item
-    public int queryPrice(int xid, String key) {
+    public int queryPrice(int xid, String key) throws UnsupportedOperationException {
         Trace.info("RM::queryPrice(" + xid + ", " + key + ") called");
         ReservableItem curObj = (ReservableItem) readData(xid, key);
         int value = 0;
