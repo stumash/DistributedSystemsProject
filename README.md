@@ -1,3 +1,5 @@
+NOTE: we didn't ace this project, we got an 80%. copy it at your own peril :)
+
 [![codebeat badge](https://codebeat.co/badges/4a4ef002-23a1-432c-b2dc-efe7093c2cd6)](https://codebeat.co/projects/github-com-stumash-distributedsystemsproject-master)
 
 # COMP 512 Distributed Systems Project, Fall 2018
